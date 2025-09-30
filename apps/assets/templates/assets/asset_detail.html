@@ -1,0 +1,167 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\assets\templates\assets\asset_detail.html -->
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ asset.name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>{{ asset.name }}</h2>
+            <p>Asset details and maintenance history</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-back" onclick="goBack()">← Back</button>
+            <a href="{% url 'assets:asset-update' pk=asset.pk %}" class="btn btn-secondary-action">Edit</a>
+            <a href="{% url 'assets:asset-delete' pk=asset.pk %}" class="btn btn-delete">Delete</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Asset Details -->
+        <div class="col-lg-7">
+            <div class="form-container mb-4">
+                <div class="section-header">
+                    <h5>Asset Details</h5>
+                </div>
+                <div class="section-body">
+                    <table class="table table-professional">
+                        <tbody>
+                            <tr>
+                                <th scope="row" style="width: 40%;">Asset Name</th>
+                                <td>{{ asset.name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Asset Account</th>
+                                <td>{{ asset.asset_account.name }} ({{ asset.asset_account.account_number }})</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Accumulated Depreciation Account</th>
+                                <td>{{ asset.accumulated_depreciation_account.name }} ({{ asset.accumulated_depreciation_account.account_number }})</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Depreciation Expense Account</th>
+                                <td>{{ asset.depreciation_expense_account.name }} ({{ asset.depreciation_expense_account.account_number }})</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Purchase Date</th>
+                                <td>{{ asset.purchase_date|date:"d M Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Purchase Price</th>
+                                <td>{{ currency_symbol }}{{ asset.purchase_price|floatformat:2|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Depreciation Method</th>
+                                <td>{{ asset.get_depreciation_method_display }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Useful Life (Years)</th>
+                                <td>{{ asset.useful_life_years }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Salvage Value</th>
+                                <td>{{ currency_symbol }}{{ asset.salvage_value|floatformat:2|intcomma }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Maintenance History -->
+            <div class="form-container">
+                <div class="section-header">
+                    <h5>Maintenance History</h5>
+                </div>
+                <div class="section-body">
+                    {% if maintenance_history %}
+                        <div class="table-responsive">
+                            <table class="table table-professional">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th class="text-end">Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in maintenance_history %}
+                                    <tr>
+                                        <td>{{ record.maintenance_date|date:"d M Y" }}</td>
+                                        <td>
+                                            <span class="badge-status badge-info">{{ record.get_maintenance_type_display }}</span>
+                                        </td>
+                                        <td>{{ record.description|truncatechars:50 }}</td>
+                                        <td class="text-end fw-medium">{{ currency_symbol }}{{ record.cost|floatformat:2|intcomma }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔧</div>
+                            <div class="empty-state-text">No maintenance records found for this asset.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Add Maintenance -->
+        <div class="col-lg-5">
+            <div class="form-container">
+                <div class="section-header">
+                    <h5>Add Maintenance Record</h5>
+                </div>
+                <div class="section-body">
+                    <form action="{% url 'assets:add-maintenance' asset_pk=asset.pk %}" method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ maintenance_form.maintenance_date.id_for_label }}" class="form-label">{{ maintenance_form.maintenance_date.label }}</label>
+                            {{ maintenance_form.maintenance_date }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ maintenance_form.maintenance_type.id_for_label }}" class="form-label">{{ maintenance_form.maintenance_type.label }}</label>
+                            {{ maintenance_form.maintenance_type }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ maintenance_form.description.id_for_label }}" class="form-label">{{ maintenance_form.description.label }}</label>
+                            {{ maintenance_form.description }}
+                            <small class="text-muted-professional">Describe the work that was done.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ maintenance_form.cost.id_for_label }}" class="form-label">{{ maintenance_form.cost.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ currency_symbol }}</span>
+                                {{ maintenance_form.cost }}
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-save">Add Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "assets:asset-list" %}';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\emails\debtor_reminder.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Reminder</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #333; line-height: 1.6; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .total-summary { background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin-bottom: 25px; text-align: center; }
+        .total-balance { font-size: 1.2em; }
+        .overdue-balance { font-size: 1.4em; color: #d9534f; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .footer { margin-top: 25px; font-size: 0.9em; color: #777; text-align: center; }
+        .company-info { background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Payment Reminder from {{ company.name }}</h2>
+        </div>
+
+        <p>Hello {{ customer_name }},</p>
+
+        <p>This is a friendly reminder regarding your account with us. Our records show a total outstanding balance and an overdue amount that requires your attention.</p>
+
+        <div class="total-summary">
+            <div class="total-balance">
+                Total Outstanding Balance: <strong>{{ currency_symbol }}{{ total_balance|floatformat:2 }}</strong>
+            </div>
+            <div class="overdue-balance">
+                Amount Overdue: <strong>{{ currency_symbol }}{{ total_overdue_balance|floatformat:2 }}</strong>
+            </div>
+        </div>
+
+        <p>The following invoice(s) are now past their due date:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Due Date</th>
+                    <th>Amount Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in overdue_transactions %}
+                <tr>
+                    <td>{{ transaction.reference_number|default:"(No Ref)" }}</td>
+                    <td>{{ transaction.due_date|date:"F d, Y" }}</td>
+                    <td>{{ currency_symbol }}{{ transaction.balance_due|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p style="margin-top: 25px;">We would appreciate your prompt payment for the overdue amount. If you have already made a payment, please disregard this notice.</p>
+
+        <div class="company-info">
+            <h4>{{ company.name }} - Contact Information</h4>
+            <table style="margin-top: 10px;">
+                {% if company.industry %}
+                <tr>
+                    <td style="background-color: #f2f2f2; font-weight: bold; width: 30%;">Industry:</td>
+                    <td>{{ company.industry }}</td>
+                </tr>
+                {% endif %}
+                {% if company.registration_number %}
+                <tr>
+                    <td style="background-color: #f2f2f2; font-weight: bold;">Registration:</td>
+                    <td>{{ company.registration_number }}</td>
+                </tr>
+                {% endif %}
+                {% if company.phone %}
+                <tr>
+                    <td style="background-color: #f2f2f2; font-weight: bold;">Phone:</td>
+                    <td>{{ company.phone }}</td>
+                </tr>
+                {% endif %}
+                {% if company.email %}
+                <tr>
+                    <td style="background-color: #f2f2f2; font-weight: bold;">Email:</td>
+                    <td>{{ company.email }}</td>
+                </tr>
+                {% endif %}
+                {% if company.address %}
+                <tr>
+                    <td style="background-color: #f2f2f2; font-weight: bold;">Address:</td>
+                    <td>{{ company.address }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>
+                <strong>{{ company.name }}</strong><br>
+                {% if company.industry %}{{ company.industry }}<br>{% endif %}
+                {% if company.email %}{{ company.email }}{% endif %}{% if company.phone and company.email %} | {% endif %}{% if company.phone %}{{ company.phone }}{% endif %}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

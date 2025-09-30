@@ -1,0 +1,311 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\inventory\templates\inventory\price_adjustment_form.html -->
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load inventory_extras %}
+
+{% block title %}Price Adjustment - {{ item.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Price Adjustment for {{ item.name }}</h2>
+            <p class="text-muted mb-0">Adjust inventory item pricing</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">
+            ← Back
+        </button>
+    </div>
+
+    <!-- Main Form Container with Shadow -->
+    <div class="form-container">
+        <!-- Item Summary Section -->
+        <div class="form-section mb-0">
+            <div class="section-header">
+                <h5 class="mb-0">Current Item Information</h5>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted">Current Stock</label>
+                        <div class="info-value">{{ item.quantity_on_hand|floatformat:0 }} {{ item.get_unit_of_measurement_display }}</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted">Current Cost</label>
+                        <div class="info-value">{{ request.user.company.currency_symbol }}{{ item.current_average_cost|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted">Current Value</label>
+                        <div class="info-value">{{ request.user.company.currency_symbol }}{{ item.quantity_on_hand|mul:item.current_average_cost|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adjustment Form Section -->
+        <div class="form-section mb-0">
+            <div class="section-header">
+                <h5 class="mb-0">Price Adjustment Details</h5>
+            </div>
+            <div class="section-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.old_unit_cost|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.new_unit_cost|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            {{ form.quantity_affected|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            {{ form.adjustment_reason|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            {{ form.reference|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Adjustment Preview -->
+                    <div class="adjustment-preview" id="adjustment-preview" style="display: none;">
+                        <h6 class="mb-3">Adjustment Preview</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted">Adjustment per Unit:</span>
+                                <div class="preview-value" id="unit-adjustment">{{ request.user.company.currency_symbol }}0.00</div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted">Total Adjustment:</span>
+                                <div class="preview-value" id="total-adjustment">{{ request.user.company.currency_symbol }}0.00</div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted">New Total Value:</span>
+                                <div class="preview-value" id="new-total-value">{{ request.user.company.currency_symbol }}0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+            <button type="button" class="btn btn-cancel" onclick="goBack()">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-save" form="price-adjustment-form">
+                Create Price Adjustment
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "inventory:item_detail" item.pk %}';
+    }
+}
+
+// Calculate adjustment preview
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.id = 'price-adjustment-form';
+    
+    const newCostField = document.getElementById('id_new_unit_cost');
+    const quantityField = document.getElementById('id_quantity_affected');
+    const oldCost = {{ item.current_average_cost }};
+    const currencySymbol = '{{ request.user.company.currency_symbol }}';
+    
+    function updatePreview() {
+        const newCost = parseFloat(newCostField.value) || 0;
+        const quantity = parseFloat(quantityField.value) || 0;
+        
+        if (newCost > 0 && quantity > 0) {
+            const unitAdjustment = newCost - oldCost;
+            const totalAdjustment = unitAdjustment * quantity;
+            const newTotalValue = newCost * quantity;
+            
+            document.getElementById('unit-adjustment').textContent = 
+                currencySymbol + unitAdjustment.toFixed(2);
+            document.getElementById('total-adjustment').textContent = 
+                currencySymbol + totalAdjustment.toFixed(2);
+            document.getElementById('new-total-value').textContent = 
+                currencySymbol + newTotalValue.toFixed(2);
+            
+            document.getElementById('adjustment-preview').style.display = 'block';
+        } else {
+            document.getElementById('adjustment-preview').style.display = 'none';
+        }
+    }
+    
+    newCostField.addEventListener('input', updatePreview);
+    quantityField.addEventListener('input', updatePreview);
+    
+    // Initial calculation
+    updatePreview();
+});
+</script>
+
+<!-- Apply the same minimal styling -->
+<style>
+/* Container with shadow */
+.form-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+/* Form sections */
+.form-section {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+/* Buttons - same as transaction form */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-save {
+    background: #343a40;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #23272b;
+    color: white;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+/* Form controls */
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+}
+
+/* Info values */
+.info-value {
+    font-weight: 600;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+/* Adjustment preview */
+.adjustment-preview {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.preview-value {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+/* Form actions */
+.form-actions {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Remove all border radius */
+.btn, .form-control, .form-select, .form-container, .section-header, .adjustment-preview {
+    border-radius: 0 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .form-actions {
+        padding: 1rem;
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+}
+</style>
+{% endblock %}

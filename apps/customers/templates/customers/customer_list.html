@@ -1,0 +1,623 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\customer\templates\customers\customer_list.html -->
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Customers & Vendors{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Customers & Vendors</h2>
+            <p class="text-muted mb-0">Manage your customer and vendor relationships</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">
+            ← Back
+        </button>
+    </div>
+
+    <!-- Main Container with Shadow -->
+    <div class="form-container">
+        <!-- Header Section -->
+        <div class="section-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Customer & Vendor Management</h5>
+                <div class="d-flex gap-2">
+                    <!-- 🎯 FIXED: Corrected export URL -->
+                    {% include 'components/export_buttons.html' with export_url='customers:export' %}
+                    <a href="{% url 'customers:customer-create' %}" class="btn btn-save">
+                        Add New Customer
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search and Filter Section - IMPROVED LAYOUT -->
+        <div class="section-body border-bottom">
+            <form method="get" id="filter-form">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search_query }}" placeholder="Name, email, phone...">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="type" class="form-label">Type</label>
+                        <div class="dropdown" data-filter="true">
+                            <select class="form-select" id="type" name="type">
+                                <option value="">All Types</option>
+                                <option value="customer" {% if selected_type == 'customer' %}selected{% endif %}>Customer</option>
+                                <option value="vendor" {% if selected_type == 'vendor' %}selected{% endif %}>Vendor</option>
+                                <option value="both" {% if selected_type == 'both' %}selected{% endif %}>Both</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="balance_filter" class="form-label">Balance Status</label>
+                        <div class="dropdown" data-filter="true">
+                            <select class="form-select" id="balance_filter" name="balance_filter">
+                                <option value="">All Balances</option>
+                                <option value="has_receivable" {% if selected_balance == 'has_receivable' %}selected{% endif %}>Has Receivables</option>
+                                <option value="has_payable" {% if selected_balance == 'has_payable' %}selected{% endif %}>Has Payables</option>
+                                <option value="zero_balance" {% if selected_balance == 'zero_balance' %}selected{% endif %}>Zero Balance</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="w-100">
+                            <button type="submit" class="btn btn-search w-100 mb-2">
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <div class="w-100">
+                            <a href="{% url 'customers:customer-list' %}" class="btn btn-cancel w-100 mb-2">
+                                Clear
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="section-body border-bottom">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Table Section -->
+        <div class="section-body p-0">
+            <div class="table-responsive">
+                <table class="table table-minimal mb-0">
+                    <thead>
+                        <tr>
+                            <th>Customer Details</th>
+                            <th>Type</th>
+                            <th>Contact Information</th>
+                            <th class="text-end">Receivable Balance</th>
+                            <th class="text-end">Payable Balance</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center" style="min-width: 180px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            <td>
+                                <div class="fw-medium">
+                                    <a href="{% url 'customers:customer-detail' customer.pk %}" class="text-decoration-none text-dark">
+                                        {{ customer.name }}
+                                    </a>
+                                </div>
+                                {% if customer.address %}
+                                    <small class="text-muted">{{ customer.address|truncatechars:40 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>
+                                    <span class="badge-minimal-info">{{ customer.get_entity_type_display }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    {% if customer.email %}
+                                        <small class="d-block">{{ customer.email }}</small>
+                                    {% endif %}
+                                    {% if customer.phone %}
+                                        <small class="d-block">{{ customer.phone }}</small>
+                                    {% endif %}
+                                    {% if not customer.email and not customer.phone %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                {% if customer.entity_type == 'customer' or customer.entity_type == 'both' %}
+                                    <div class="fw-medium">
+                                        {{ request.user.company.currency_symbol }}{{ customer.receivable_balance|floatformat:2|intcomma }}
+                                    </div>
+                                    {% if customer.receivable_balance > 0 %}
+                                        <small class="text-success">Outstanding</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if customer.entity_type == 'vendor' or customer.entity_type == 'both' %}
+                                    <div class="fw-medium">
+                                        {{ request.user.company.currency_symbol }}{{ customer.payable_balance|floatformat:2|intcomma }}
+                                    </div>
+                                    {% if customer.payable_balance > 0 %}
+                                        <small class="text-warning">Owed</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if customer.receivable_balance > 0 or customer.payable_balance > 0 %}
+                                    <span class="status-badge status-warning">Has Balance</span>
+                                {% else %}
+                                    <span class="status-badge status-success">Clear</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="action-buttons">
+                                    <a href="{% url 'customers:customer-detail' customer.pk %}" 
+                                       class="btn btn-action" title="View Details">View</a>
+                                    <a href="{% url 'customers:customer-update' customer.pk %}" 
+                                       class="btn btn-action" title="Edit Customer">Edit</a>
+                                    {% if customer.email and customer.receivable_balance > 0 %}
+                                        <a href="{% url 'customers:send-reminder-email' customer.pk %}" 
+                                           class="btn btn-action" title="Send Reminder">Remind</a>
+                                    {% endif %}
+                                    <a href="{% url 'transactions:transaction_create' %}?customer={{ customer.pk }}" 
+                                       class="btn btn-action" title="New Transaction">Transaction</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="empty-state">
+                                    <p class="text-muted mt-2">
+                                        {% if search_query or selected_type or selected_balance %}
+                                            No customers found matching your criteria.
+                                        {% else %}
+                                            No customers or vendors found.
+                                        {% endif %}
+                                    </p>
+                                    <a href="{% url 'customers:customer-create' %}" class="btn btn-save">
+                                        Create First Customer
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if customers.has_other_pages %}
+        <div class="section-footer">
+            <nav aria-label="Customer pagination">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if customers.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ customers.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in customers.paginator.page_range %}
+                        {% if customers.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > customers.number|add:'-3' and num < customers.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if customers.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ customers.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <div class="text-center text-muted mt-2">
+                Showing {{ customers.start_index }} to {{ customers.end_index }} of {{ customers.paginator.count }} customers
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Summary Stats - IMPROVED LAYOUT IN ROW -->
+        {% if customers %}
+        <div class="section-footer bg-light">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Total Customers</h6>
+                        <span class="fw-bold">{{ total_customers }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Total Receivables</h6>
+                        <span class="fw-bold">{{ request.user.company.currency_symbol }}{{ total_receivables|floatformat:2|intcomma }}</span>
+                        <div class="stat-detail">{{ customers_with_receivables }} customer(s)</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Total Payables</h6>
+                        <span class="fw-bold">{{ request.user.company.currency_symbol }}{{ total_payables|floatformat:2|intcomma }}</span>
+                        <div class="stat-detail">{{ customers_with_payables }} vendor(s)</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Active This Month</h6>
+                        <span class="fw-bold">{{ active_this_month }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dropdown filters
+    $('.dropdown[data-filter="true"]').dropdownFilter({
+        filterPlaceholder: 'Search options...',
+        noResultsText: 'No results found',
+        maxHeight: '200px'
+    });
+});
+
+// Back button functionality
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/dashboard/';
+    }
+}
+</script>
+
+<!-- Consistent Styling with Inventory Management -->
+<style>
+/* Container with shadow - same as inventory */
+.form-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+/* Form sections - same structure */
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+.section-body.border-bottom {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.section-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Buttons - same color scheme as inventory */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-save {
+    background: #343a40;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #23272b;
+    color: white;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+.btn-search {
+    background: #495057;
+    color: white;
+}
+
+.btn-search:hover {
+    background: #343a40;
+    color: white;
+}
+
+.btn-secondary-action {
+    background: #adb5bd;
+    color: white;
+}
+
+.btn-secondary-action:hover {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-action {
+    background: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    padding: 4px 8px;
+    font-size: 12px;
+    margin: 1px;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.btn-action:hover {
+    background: #e9ecef;
+    color: #343a40;
+    text-decoration: none;
+}
+
+/* Form controls - consistent with inventory */
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+}
+
+/* Table styling - minimal like inventory */
+.table-minimal {
+    font-size: 14px;
+    border-collapse: collapse;
+}
+
+.table-minimal th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-minimal td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+/* Badges - minimal styling */
+.badge-minimal {
+    background: #f8f9fa;
+    color: #495057;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+}
+
+.badge-minimal-info {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 6px;
+    font-size: 11px;
+    border: 1px solid #bbdefb;
+}
+
+.badge-minimal-success {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 2px 6px;
+    font-size: 11px;
+    border: 1px solid #c8e6c9;
+}
+
+.badge-minimal-warning {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 2px 6px;
+    font-size: 11px;
+    border: 1px solid #ffcc02;
+}
+
+/* Status badges */
+.status-badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-success {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.status-warning {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 1px solid #ffcc02;
+}
+
+.status-danger {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+/* Action buttons container */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+}
+
+/* Stats styling */
+.stat-item {
+    padding: 8px;
+    border-right: 1px solid #dee2e6;
+}
+
+.stat-item:last-child {
+    border-right: none;
+}
+
+.stat-detail {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 2rem;
+}
+
+/* Remove all border radius - consistent with inventory */
+.btn, .form-control, .form-select, .table, .form-container, .section-header, 
+.badge-minimal, .badge-minimal-info, .badge-minimal-success, .badge-minimal-warning,
+.status-badge {
+    border-radius: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        width: 100%;
+        margin-bottom: 2px;
+    }
+    
+    .stat-item {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+        padding: 12px;
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    /* Stack filter form on mobile */
+    .row.g-3 > div {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Dropdown filter styling - consistent */
+.dropdown-filter-container {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.dropdown-scroll-container {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.no-results-message {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 8px;
+}
+
+/* Alert styling */
+.alert {
+    margin-bottom: 0;
+    font-size: 14px;
+}
+
+/* Pagination styling */
+.pagination .page-link {
+    color: #495057;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #495057;
+    border-color: #495057;
+}
+
+.pagination .page-link:hover {
+    color: #343a40;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,118 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\public_base.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>{{ page_title|default:"WJ-Accounting | Modern Accounting for Your Business" }}</title>
+  <meta content="Streamline your finances, manage inventory, and automate reporting with WJ-Accounting System. Powerful, intuitive, and built for growth." name="description">
+  <meta content="accounting, bookkeeping, inventory, finance, business management" name="keywords">
+
+  <!-- Favicons -->
+  <link href="{% static 'public/assets/img/favicon.png' %}" rel="icon">
+  <link href="{% static 'public/assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Montserrat:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="{% static 'public/assets/vendor/aos/aos.css' %}" rel="stylesheet">
+  <link href="{% static 'public/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'public/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'public/assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
+  <link href="{% static 'public/assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+  <link href="{% static 'public/assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+
+  <!-- Template Main CSS File -->
+  <link href="{% static 'public/assets/css/style.css' %}" rel="stylesheet">
+
+  <!-- ACTION: Custom CSS to add shadow to the text logo -->
+  <style>
+    #header .logo h1 a {
+      color: #fff; /* Ensures the text is white */
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Adds a subtle shadow for visibility */
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <!-- ======= Header ======= -->
+  <header id="header" class="d-flex align-items-center">
+    <div class="container d-flex align-items-center justify-content-between">
+
+      <div class="logo">
+        <h1><a href="{% url 'core:public_home' %}">WJ-Accounting System</a></h1>
+      </div>
+
+      <nav id="navbar" class="navbar">
+        <ul>
+          <li><a class="nav-link scrollto active" href="#hero">Home</a></li>
+          <li><a class="nav-link scrollto" href="#about">About</a></li>
+          <li><a class="nav-link scrollto" href="#services">Features</a></li>
+          <!-- ACTION: Add new link to the guide section -->
+          <li><a class="nav-link scrollto" href="#guide">How It Works</a></li>
+          <li><a class="nav-link scrollto" href="#pricing">Pricing</a></li>
+          <li><a class="nav-link scrollto" href="#contact">Contact</a></li>
+          <li><a class="nav-link" href="{% url 'auth:login' %}">Login</a></li>
+          <li><a class="getstarted scrollto" href="{% url 'subscriptions:register' %}">Get Started</a></li>
+        </ul>
+        <i class="bi bi-list mobile-nav-toggle"></i>
+      </nav><!-- .navbar -->
+
+    </div>
+  </header><!-- End Header -->
+
+  {% block hero %}{% endblock %}
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main><!-- End #main -->
+
+  <!-- ======= Footer ======= -->
+  <footer id="footer">
+    <div class="footer-top">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-6">
+            <h3>WJ-Accounting System</h3>
+            <p>Powerful, intuitive, and built for your business's growth.</p>
+          </div>
+        </div>
+        <div class="social-links">
+          <a href="#" class="twitter"><i class="bx bxl-twitter"></i></a>
+          <a href="#" class="facebook"><i class="bx bxl-facebook"></i></a>
+          <a href="#" class="instagram"><i class="bx bxl-instagram"></i></a>
+          <a href="#" class="linkedin"><i class="bx bxl-linkedin"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container footer-bottom clearfix">
+      <div class="copyright">
+        &copy; Copyright <strong><span>WJ-Accounting</span></strong>. All Rights Reserved
+      </div>
+      <div class="credits">
+        Developed by <a href="#">WhiteScreen Signature Ltd.</a>
+      </div>
+    </div>
+  </footer><!-- End Footer -->
+
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Vendor JS Files -->
+  <script src="{% static 'public/assets/vendor/aos/aos.js' %}"></script>
+  <script src="{% static 'public/assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'public/assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+  <script src="{% static 'public/assets/vendor/isotope-layout/isotope.pkgd.min.js' %}"></script>
+  <script src="{% static 'public/assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+
+  <!-- Template Main JS File -->
+  <script src="{% static 'public/assets/js/main.js' %}"></script>
+
+</body>
+</html>

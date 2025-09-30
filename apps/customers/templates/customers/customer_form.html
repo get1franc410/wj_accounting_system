@@ -1,0 +1,167 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\customer\templates\customers\customer_form.html -->
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit {{ customer.name }}{% else %}Create Customer{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>
+                {% if is_edit %}
+                    Edit: {{ customer.name }}
+                {% else %}
+                    Create New Customer/Vendor
+                {% endif %}
+            </h2>
+            <p>{% if is_edit %}Update customer information{% else %}Add a new customer or vendor to your system{% endif %}</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">← Back</button>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="form-container">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="section-body">
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Basic Information Section -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h5>Basic Information</h5>
+                </div>
+                <div class="section-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Name *</label>
+                            <input type="text" class="form-control {% if form.name.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.name.id_for_label }}" name="{{ form.name.html_name }}" 
+                                   value="{{ form.name.value|default:'' }}" required>
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">{% for error in form.name.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                            {% if form.name.help_text %}
+                                <div class="form-text">{{ form.name.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.entity_type.id_for_label }}" class="form-label">Entity Type *</label>
+                            <div class="dropdown" data-filter="true">
+                                <select class="form-select {% if form.entity_type.errors %}is-invalid{% endif %}" 
+                                        id="{{ form.entity_type.id_for_label }}" name="{{ form.entity_type.html_name }}">
+                                    {% for value, text in form.entity_type.field.choices %}
+                                        <option value="{{ value }}" {% if form.entity_type.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ text }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.entity_type.errors %}
+                                <div class="invalid-feedback">{% for error in form.entity_type.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                            {% if form.entity_type.help_text %}
+                                <div class="form-text">{{ form.entity_type.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information Section -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h5>Contact Information</h5>
+                </div>
+                <div class="section-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            <input type="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.email.id_for_label }}" name="{{ form.email.html_name }}" 
+                                   value="{{ form.email.value|default:'' }}">
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">{% for error in form.email.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Phone</label>
+                            <input type="text" class="form-control {% if form.phone.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.phone.id_for_label }}" name="{{ form.phone.html_name }}" 
+                                   value="{{ form.phone.value|default:'' }}">
+                            {% if form.phone.errors %}
+                                <div class="invalid-feedback">{% for error in form.phone.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                            <textarea class="form-control" id="{{ form.address.id_for_label }}" 
+                                      name="{{ form.address.html_name }}" rows="3">{{ form.address.value|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Information Section -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h5>Financial Information</h5>
+                </div>
+                <div class="section-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.credit_limit.id_for_label }}" class="form-label">Credit Limit</label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ request.user.company.currency_symbol|default:"$" }}</span>
+                                <input type="number" step="0.01" class="form-control {% if form.credit_limit.errors %}is-invalid{% endif %}" 
+                                       id="{{ form.credit_limit.id_for_label }}" name="{{ form.credit_limit.html_name }}" 
+                                       value="{{ form.credit_limit.value|default:'0.00' }}">
+                            </div>
+                            {% if form.credit_limit.errors %}
+                                <div class="invalid-feedback">{% for error in form.credit_limit.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                            {% if form.credit_limit.help_text %}
+                                <div class="form-text">{{ form.credit_limit.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-cancel" onclick="goBack()">Cancel</button>
+                <button type="submit" class="btn btn-save">
+                    {% if is_edit %}Save Changes{% else %}Save Customer{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "customers:customer-list" %}';
+    }
+}
+
+// Initialize dropdown filters
+document.addEventListener('DOMContentLoaded', function() {
+    $('.dropdown[data-filter="true"]').dropdownFilter({
+        filterPlaceholder: 'Search...',
+        noResultsText: 'No results found',
+        maxHeight: '200px'
+    });
+});
+</script>
+{% endblock %}

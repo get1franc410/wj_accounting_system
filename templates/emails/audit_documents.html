@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Audit Documents Package - {{ company_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .header { background-color: #f8f9fa; padding: 20px; border-bottom: 3px solid #007bff; }
+        .content { padding: 20px; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table th, .info-table td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        .info-table th { background-color: #f8f9fa; font-weight: bold; }
+        .footer { background-color: #f8f9fa; padding: 15px; margin-top: 30px; font-size: 0.9em; color: #666; }
+        .reports-list { background-color: #f8f9fa; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 Audit Documents Package</h1>
+        <h2>{{ company_name }}</h2>
+    </div>
+    
+    <div class="content">
+        <p>Dear {{ auditor_company.name }} Team,</p>
+        
+        <p>Please find attached the comprehensive audit documents package for <strong>{{ company_name }}</strong>.</p>
+        
+        <div class="reports-list">
+            <h3>📊 Included Reports:</h3>
+            <ul>
+                {% for report in included_reports %}
+                <li>{{ report }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <h3>📋 Company Information:</h3>
+        <table class="info-table">
+            {% for key, value in additional_info.items %}
+            <tr>
+                <th>{{ key }}:</th>
+                <td>{{ value }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        
+        <h3>📦 Package Details:</h3>
+        <table class="info-table">
+            <tr>
+                <th>Audit Period:</th>
+                <td>{{ audit_period }}</td>
+            </tr>
+            <tr>
+                <th>Package Generated:</th>
+                <td>{{ package_date }}</td>
+            </tr>
+            <tr>
+                <th>File Size:</th>
+                <td>{{ file_size }}</td>
+            </tr>
+        </table>
+        
+        <p>All financial data has been exported in CSV format for easy analysis. Please review the attached documents and contact us if you need any additional information or clarification.</p>
+        
+        <p>Thank you for your professional services.</p>
+        
+        <p>Best regards,<br>
+        <strong>{{ company_name }}</strong><br>
+        {% if company.phone %}📞 {{ company.phone }}<br>{% endif %}
+        {% if company.email %}✉️ {{ company.email }}<br>{% endif %}
+        </p>
+    </div>
+    
+    <div class="footer">
+        <p><strong>Note:</strong> This email contains confidential financial information. Please handle with appropriate security measures.</p>
+        <p>Generated automatically by the Accounting System on {{ package_date }}</p>
+    </div>
+</body>
+</html>

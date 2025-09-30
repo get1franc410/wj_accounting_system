@@ -1,0 +1,513 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\transactions\templates\transactions\transaction_list.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/professional-forms.css' %}" rel="stylesheet">
+<link href="{% static 'assets/css/smart-search.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="page-container" style="padding-left: 2rem;">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>{{ page_title }}</h2>
+            <p>Manage and track all your transactions</p>
+        </div>
+        <div class="header-actions">
+            {% include 'components/export_buttons.html' with export_url='transactions:export' %}
+            <a href="{% url 'transactions:transaction_create' %}" class="btn btn-save">
+                New Transaction
+            </a>
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filters Container - Compact -->
+    <div class="form-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h5>Search & Filter Transactions</h5>
+            </div>
+            <div class="section-body search-section-compact">
+                <form method="get" class="filter-form">
+                    <!-- First Row: Main Search Fields -->
+                    <div class="search-form-row">
+                        <div class="search-input-group">
+                            <label class="form-label-compact">Search</label>
+                            <input type="text" class="form-control form-control-compact" 
+                                   id="search" name="search" value="{{ search_query }}" 
+                                   placeholder="Reference, description, customer...">
+                        </div>
+                        <div class="search-input-group">
+                            <label class="form-label-compact">Type</label>
+                            <select class="form-select form-control-compact" id="type" name="type">
+                                <option value="">All Types</option>
+                                <option value="SALE" {% if selected_type == 'SALE' %}selected{% endif %}>Sale</option>
+                                <option value="PURCHASE" {% if selected_type == 'PURCHASE' %}selected{% endif %}>Purchase</option>
+                                <option value="EXPENSE" {% if selected_type == 'EXPENSE' %}selected{% endif %}>Expense</option>
+                                <option value="Payment Receipt" {% if selected_type == 'Payment Receipt' %}selected{% endif %}>Payment</option>
+                            </select>
+                        </div>
+                        <div class="search-input-group">
+                            <label class="form-label-compact">Status</label>
+                            <select class="form-select form-control-compact" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Paid</option>
+                                <option value="unpaid" {% if selected_status == 'unpaid' %}selected{% endif %}>Unpaid</option>
+                                <option value="partial" {% if selected_status == 'partial' %}selected{% endif %}>Partial</option>
+                            </select>
+                        </div>
+                        <div class="search-input-group">
+                            <label class="form-label-compact">Customer/Vendor</label>
+                            <select class="form-select form-control-compact" id="customer" name="customer" data-filter="true" data-placeholder="Search customers...">
+                                <option value="">All Customers</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}" {% if selected_customer == customer.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ customer.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Second Row: Date Range and Actions -->
+                    <div class="search-form-row">
+                        <div class="search-input-group">
+                            <label class="form-label-compact">From Date</label>
+                            <input type="date" class="form-control form-control-compact" 
+                                   id="date_from" name="date_from" value="{{ date_from }}">
+                        </div>
+                        <div class="search-input-group">
+                            <label class="form-label-compact">To Date</label>
+                            <input type="date" class="form-control form-control-compact" 
+                                   id="date_to" name="date_to" value="{{ date_to }}">
+                        </div>
+                        <div class="search-actions-inline">
+                            <button type="submit" class="btn btn-save btn-compact">
+                                Search
+                            </button>
+                            <a href="{% url 'transactions:transaction_list' %}" class="btn btn-cancel btn-compact">
+                                Clear
+                            </a>
+                        </div>
+                    </div>
+                    
+                    {% if search_query or selected_type or selected_status or selected_customer or date_from or date_to %}
+                        <div class="filter-indicator-inline">
+                            <span class="filter-indicator">
+                                Filtered Results
+                            </span>
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Results Container -->
+    <div class="list-container">
+        <div class="table-section">
+            <div class="table-responsive">
+                <table class="table-professional">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Customer/Vendor</th>
+                            <th>Reference</th>
+                            <th>Description</th>
+                            <th class="text-end">Amount</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">Balance</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="maintenance-type maintenance-type-{% if transaction.transaction_type == 'SALE' %}routine{% elif transaction.transaction_type == 'PURCHASE' %}preventive{% elif transaction.transaction_type == 'EXPENSE' %}corrective{% else %}emergency{% endif %}">
+                                    {{ transaction.get_transaction_type_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="asset-info">
+                                    <div class="asset-link">{{ transaction.customer.name|default:"—" }}</div>
+                                </div>
+                            </td>
+                            <td>{{ transaction.reference_number|default:"—" }}</td>
+                            <td>
+                                <div class="asset-desc">{{ transaction.description|truncatechars:50|default:"—" }}</div>
+                            </td>
+                            <td class="text-end">{{ currency_symbol }}{{ transaction.total_amount|floatformat:2 }}</td>
+                            <td class="text-end">{{ currency_symbol }}{{ transaction.amount_paid|floatformat:2 }}</td>
+                            <td class="text-end">{{ currency_symbol }}{{ transaction.balance_due|floatformat:2 }}</td>
+                            <td>
+                                {% if transaction.payment_status == 'Paid' %}
+                                    <span class="status-badge status-active">{{ transaction.payment_status }}</span>
+                                {% elif transaction.payment_status == 'Unpaid' %}
+                                    <span class="status-badge status-disposed">{{ transaction.payment_status }}</span>
+                                {% else %}
+                                    <span class="status-badge status-maintenance">{{ transaction.payment_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons-boxed">
+                                    <a href="{% url 'transactions:transaction_detail' pk=transaction.pk %}" 
+                                       class="action-btn action-btn-view">
+                                        View
+                                    </a>
+                                    <a href="{% url 'transactions:transaction_update' pk=transaction.pk %}" 
+                                       class="action-btn action-btn-delete">
+                                        Edit
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10">
+                                <div class="empty-state">
+                                    <div class="empty-content">
+                                        <div class="empty-message">
+                                            {% if search_query or selected_type or selected_status or selected_customer or date_from or date_to %}
+                                                No transactions match your search criteria.
+                                            {% else %}
+                                                No transactions found.
+                                            {% endif %}
+                                        </div>
+                                        <div class="mt-3">
+                                            {% if search_query or selected_type or selected_status or selected_customer or date_from or date_to %}
+                                                <a href="{% url 'transactions:transaction_list' %}" class="btn btn-cancel">
+                                                    Clear Search
+                                                </a>
+                                            {% endif %}
+                                            <a href="{% url 'transactions:transaction_create' %}" class="btn btn-save">
+                                                Create First Transaction
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination Section -->
+        {% if transactions.has_other_pages %}
+        <div class="pagination-section">
+            <nav aria-label="Transaction pagination">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if transactions.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ transactions.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in transactions.paginator.page_range %}
+                        {% if transactions.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > transactions.number|add:'-3' and num < transactions.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if transactions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ transactions.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <div class="text-center text-muted mt-2">
+                Showing {{ transactions.start_index }} to {{ transactions.end_index }} of {{ transactions.paginator.count }} transactions
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Help Text Section -->
+        <div class="help-text-section">
+            <div class="help-content">
+                <p><strong>Transaction Management:</strong> Track all your business transactions including sales, purchases, expenses, and payments. Use filters to quickly find specific transactions or export data for reporting. Transaction status shows payment progress - Paid (fully settled), Unpaid (no payments), or Partial (partially paid).</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Compact Search Form Styling */
+.search-section-compact {
+    padding: 1rem 1.5rem;
+}
+
+.search-form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1rem;
+}
+
+.search-form-row:last-child {
+    margin-bottom: 0;
+}
+
+.search-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label-compact {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 4px;
+}
+
+.form-control-compact {
+    height: 32px;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.search-actions-inline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.btn-compact {
+    padding: 6px 12px;
+    font-size: 12px;
+    height: 32px;
+}
+
+.filter-indicator-inline {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+}
+
+/* Action Buttons - Matching Image Style */
+.action-buttons-boxed {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    min-width: 80px;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+    line-height: 1.2;
+}
+
+.action-btn-view {
+    background-color: #6c757d;
+    color: white;
+}
+
+.action-btn-view:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+
+.action-btn-delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-btn-delete:hover {
+    background-color: #c82333;
+    color: white;
+    text-decoration: none;
+}
+
+/* Pagination Section */
+.pagination-section {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.page-link {
+    color: #495057;
+    border-color: #dee2e6;
+    border-radius: 0 !important;
+}
+
+.page-item.active .page-link {
+    background-color: #495057;
+    border-color: #495057;
+}
+
+.page-link:hover {
+    color: #343a40;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Help Text Section */
+.help-text-section {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.help-content {
+    font-size: 13px;
+    color: #6c757d;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.help-content p {
+    margin: 0;
+}
+
+/* Additional spacing for left border */
+.page-container {
+    border-left: 3px solid transparent;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .search-form-row {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding-left: 1rem !important;
+    }
+    
+    .search-form-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .search-actions-inline {
+        justify-content: flex-start;
+    }
+    
+    .action-buttons-boxed {
+        flex-direction: row;
+        justify-content: center;
+        gap: 4px;
+    }
+    
+    .action-btn {
+        min-width: 50px;
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .help-text-section {
+        padding: 0.5rem 1rem;
+    }
+    
+    .help-content {
+        font-size: 12px;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-responsive {
+        font-size: 12px;
+    }
+    
+    .table-professional th,
+    .table-professional td {
+        padding: 6px 4px;
+    }
+    
+    .maintenance-type {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+    
+    .status-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dropdown filters
+    $('.dropdown[data-filter="true"]').dropdownFilter({
+        filterPlaceholder: 'Search customers...',
+        noResultsText: 'No customers found',
+        maxHeight: '300px'
+    });
+    
+    // Auto-submit search form with debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 500);
+        });
+    }
+    
+    // Auto-submit on select changes
+    const selectElements = ['type', 'status', 'customer'];
+    selectElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+    });
+});
+
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/dashboard/';
+    }
+}
+</script>
+{% endblock %}

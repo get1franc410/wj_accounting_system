@@ -1,0 +1,335 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\core\templates\core\user_management.html -->
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}User Management{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/professional-forms.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="page-container" style="padding-left: 2rem;">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>User Management</h2>
+            <p>Manage system users and their permissions</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            <button class="btn btn-save" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                Add New User
+            </button>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="list-container">
+        <div class="table-section">
+            <div class="table-responsive">
+                <table class="table-professional">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Contact Info</th>
+                            <th>User Type</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_obj in users %}
+                        <tr>
+                            <td>
+                                <div class="asset-info">
+                                    <div class="asset-link">{{ user_obj.username }}</div>
+                                    {% if user_obj.first_name or user_obj.last_name %}
+                                        <div class="asset-desc">{{ user_obj.get_full_name }}</div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="asset-desc">{{ user_obj.email|default:"Not provided" }}</div>
+                            </td>
+                            <td>
+                                <div class="account-badge">{{ user_obj.get_user_type_display }}</div>
+                            </td>
+                            <td>
+                                {% if user_obj.is_active %}
+                                    <span class="status-badge status-active">Active</span>
+                                {% else %}
+                                    <span class="status-badge status-disposed">Inactive</span>
+                                {% endif %}
+                                
+                                {% if user_obj.force_password_change %}
+                                    <div class="asset-tag mt-1">Password Reset Required</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="asset-desc">
+                                    {% if user_obj.last_login %}
+                                        {{ user_obj.last_login|timesince }} ago
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-buttons-boxed">
+                                    <button class="action-btn action-btn-view edit-user-btn" 
+                                            data-user-id="{{ user_obj.id }}"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editUserModal"
+                                            title="Edit User">
+                                        Edit
+                                    </button>
+                                    
+                                    {% if user_obj != user %}
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="form_type" value="toggle_user_status">
+                                            <input type="hidden" name="user_id" value="{{ user_obj.id }}">
+                                            <button type="submit" class="action-btn action-btn-delete"
+                                                    onclick="return confirm('{% if user_obj.is_active %}Deactivate{% else %}Activate{% endif %} user {{ user_obj.username }}?')"
+                                                    title="{% if user_obj.is_active %}Deactivate{% else %}Activate{% endif %} User">
+                                                {% if user_obj.is_active %}Disable{% else %}Enable{% endif %}
+                                            </button>
+                                        </form>
+                                        
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="form_type" value="reset_password">
+                                            <input type="hidden" name="user_id" value="{{ user_obj.id }}">
+                                            <button type="submit" class="action-btn action-btn-view"
+                                                    onclick="return confirm('Reset password for {{ user_obj.username }}? They will be required to change it on next login.')"
+                                                    title="Reset Password">
+                                                Reset
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <div class="empty-content">
+                                        <div class="empty-message">No users found</div>
+                                        <div class="mt-3">
+                                            <button class="btn btn-save" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                                                Create First User
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Help Text Section -->
+        <div class="help-text-section">
+            <div class="help-content">
+                <p><strong>User Management Guide:</strong> Add users with appropriate permissions for your organization. Admin users have full access, Accountants can manage financial data, and Managers have read-only access to reports. Always use strong passwords and enable two-factor authentication when available.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="create_user">
+                <div class="modal-body">
+                    <div class="professional-form">
+                        {{ create_form|crispy }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="update_user">
+                <input type="hidden" name="user_id" id="edit-user-id">
+                <div class="modal-body">
+                    <div id="editUserFormContent" class="professional-form">
+                        <!-- Form content will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save">Update User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Action Buttons - Matching Image Style */
+.action-buttons-boxed {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    min-width: 80px;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+    line-height: 1.2;
+}
+
+.action-btn-view {
+    background-color: #6c757d;
+    color: white;
+}
+
+.action-btn-view:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+
+.action-btn-delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-btn-delete:hover {
+    background-color: #c82333;
+    color: white;
+    text-decoration: none;
+}
+
+.account-badge {
+    background-color: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* Help Text Section */
+.help-text-section {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.help-content {
+    font-size: 13px;
+    color: #6c757d;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.help-content p {
+    margin: 0;
+}
+
+/* Additional spacing for left border */
+.page-container {
+    border-left: 3px solid transparent;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-container {
+        padding-left: 1rem !important;
+    }
+    
+    .action-buttons-boxed {
+        flex-direction: row;
+        justify-content: center;
+        gap: 4px;
+    }
+    
+    .action-btn {
+        min-width: 50px;
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .help-text-section {
+        padding: 0.5rem 1rem;
+    }
+    
+    .help-content {
+        font-size: 12px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle edit user button clicks
+    document.querySelectorAll('.edit-user-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            document.getElementById('edit-user-id').value = userId;
+            
+            // Load user form via AJAX
+            fetch(`/core/get-user/${userId}/`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('editUserFormContent').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading user form:', error);
+                });
+        });
+    });
+});
+
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/dashboard/';
+    }
+}
+</script>
+{% endblock %}

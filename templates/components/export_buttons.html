@@ -1,0 +1,42 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\components\export_buttons.html -->
+<div class="export-buttons mb-3">
+    <div class="btn-group" role="group" aria-label="Export options">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-download"></i> Export
+        </button>
+        <ul class="dropdown-menu">
+            <!-- FIX: Dynamically build the URL with or without a primary key -->
+            {% with base_url=request.get_full_path %}
+            <li><a class="dropdown-item export-link" href="{% if pk %}{% url export_url pk=pk %}?format=csv{% else %}{% url export_url %}?format=csv{% endif %}" target="_blank">
+                <i class="fas fa-file-csv text-success"></i> Export as CSV
+            </a></li>
+            <li><a class="dropdown-item export-link" href="{% if pk %}{% url export_url pk=pk %}?format=excel{% else %}{% url export_url %}?format=excel{% endif %}" target="_blank">
+                <i class="fas fa-file-excel text-primary"></i> Export as Excel
+            </a></li>
+            <li><a class="dropdown-item export-link" href="{% if pk %}{% url export_url pk=pk %}?format=pdf{% else %}{% url export_url %}?format=pdf{% endif %}" target="_blank">
+                <i class="fas fa-file-pdf text-danger"></i> Export as PDF
+            </a></li>
+            {% endwith %}
+        </ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportLinks = document.querySelectorAll('.export-link');
+    
+    exportLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Show loading state
+            const icon = this.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-spinner fa-spin';
+            
+            // Reset icon after 3 seconds
+            setTimeout(() => {
+                icon.className = originalClass;
+            }, 3000);
+        });
+    });
+});
+</script>

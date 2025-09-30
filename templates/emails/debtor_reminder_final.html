@@ -1,0 +1,99 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\emails\debtor_reminder_final.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2 style="color: #d9534f;">FINAL NOTICE - Overdue Payment</h2>
+
+<p>Dear {{ customer_name }},</p>
+
+<p><strong>This is our final notice regarding your overdue account with {{ company.name }}.</strong></p>
+
+<div class="alert alert-danger">
+    <h3>URGENT: Payment Required</h3>
+    <p><strong>Days Overdue:</strong> {{ days_overdue }} days</p>
+    <p><strong>Total Overdue Amount:</strong> {{ currency_symbol }}{{ total_overdue_balance|floatformat:2 }}</p>
+</div>
+
+<p>Despite our previous reminders, the following invoice(s) remain unpaid:</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+    <thead>
+        <tr style="background-color: #f8f9fa;">
+            <th style="border: 1px solid #dee2e6; padding: 12px;">Invoice #</th>
+            <th style="border: 1px solid #dee2e6; padding: 12px;">Due Date</th>
+            <th style="border: 1px solid #dee2e6; padding: 12px;">Days Overdue</th>
+            <th style="border: 1px solid #dee2e6; padding: 12px;">Amount Due</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in overdue_transactions %}
+        <tr>
+            <td style="border: 1px solid #dee2e6; padding: 8px;">{{ transaction.reference_number|default:"(No Ref)" }}</td>
+            <td style="border: 1px solid #dee2e6; padding: 8px;">{{ transaction.due_date|date:"M d, Y" }}</td>
+            <td style="border: 1px solid #dee2e6; padding: 8px; color: #d9534f;">
+                {{ transaction.due_date|timesince }} ago
+            </td>
+            <td style="border: 1px solid #dee2e6; padding: 8px;">{{ currency_symbol }}{{ transaction.balance_due|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="alert alert-warning">
+    <h4>Immediate Action Required</h4>
+    <p>Please remit payment immediately to avoid:</p>
+    <ul>
+        <li>Additional late fees</li>
+        <li>Suspension of services</li>
+        <li>Collection agency referral</li>
+        <li>Legal action</li>
+    </ul>
+</div>
+
+<p>If you are experiencing financial difficulties, please contact us immediately to discuss payment arrangements.</p>
+
+<h3>Company Contact Information:</h3>
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Company:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.name }}</td>
+    </tr>
+    {% if company.industry %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Industry:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.industry }}</td>
+    </tr>
+    {% endif %}
+    {% if company.registration_number %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Registration No:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.registration_number }}</td>
+    </tr>
+    {% endif %}
+    {% if company.phone %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Phone:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.phone }}</td>
+    </tr>
+    {% endif %}
+    {% if company.email %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Email:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.email }}</td>
+    </tr>
+    {% endif %}
+    {% if company.address %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Address:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.address }}</td>
+    </tr>
+    {% endif %}
+</table>
+
+<p><strong>Contact us urgently to resolve this matter.</strong></p>
+
+<p>Sincerely,<br>
+<strong>{{ company.name }} Accounts Department</strong><br>
+{% if company.industry %}{{ company.industry }}<br>{% endif %}
+{% if company.email %}{{ company.email }}{% endif %}{% if company.phone and company.email %} | {% endif %}{% if company.phone %}{{ company.phone }}{% endif %}</p>
+{% endblock %}

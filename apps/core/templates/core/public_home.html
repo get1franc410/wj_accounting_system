@@ -1,0 +1,264 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\core\templates\core\public_home.html -->
+
+{% extends "public_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block hero %}
+  <!-- ======= Hero Section ======= -->
+  <section id="hero">
+    <div class="hero-container">
+      <h1 data-aos="zoom-in">Welcome To WJ-Accounting</h1>
+      <h2 data-aos="fade-up">The All-in-One Platform for Invoicing, Inventory, and Financial Reporting.</h2>
+      <a data-aos="fade-up" data-aos-delay="200" href="{% url 'subscriptions:register' %}" class="btn-get-started scrollto">Start Your Free Trial</a>
+    </div>
+  </section><!-- End Hero -->
+{% endblock %}
+
+{% block content %}
+    <!-- ======= About Us Section ======= -->
+    <section id="about" class="about">
+      <div class="container">
+
+        <div class="section-title" data-aos="fade-up">
+          <h2>About WJ-Accounting</h2>
+          <p>Go Beyond Basic Bookkeeping.</p>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-6" data-aos="fade-right">
+            <div class="image">
+              <img src="{% static 'public/assets/img/about.jpg' %}" class="img-fluid" alt="A person working on financial charts on a laptop.">
+            </div>
+          </div>
+          <div class="col-lg-6" data-aos="fade-left">
+            <div class="content pt-4 pt-lg-0 pl-0 pl-lg-3 ">
+              <h3>Take full control of your business with a professional-grade accounting system.</h3>
+              <p class="fst-italic">
+                WJ-Accounting is engineered for accuracy, compliance, and efficiency, giving you the tools to manage complex finances with ease and make data-driven decisions.
+              </p>
+              <ul>
+                <li><i class="bx bx-check-double"></i> Full Double-Entry system with a customizable Chart of Accounts.</li>
+                <li><i class="bx bx-check-double"></i> Track real-time inventory levels from purchase to sale.</li>
+                <li><i class="bx bx-check-double"></i> Manage fixed assets and automatically calculate monthly depreciation.</li>
+                <li><i class="bx bx-check-double"></i> Generate professional invoices, track payments, and manage receivables.</li>
+                <li><i class="bx bx-check-double"></i> Produce key financial reports like Income Statements and Balance Sheets instantly.</li>
+              </ul>
+              <p>
+                Focus on growing your business while our system handles the complexities of financial recording and reporting. Make informed decisions backed by accurate, real-time data.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- End About Us Section -->
+
+    <!-- ======= Services Section (Features) ======= -->
+    <section id="services" class="services">
+      <div class="container">
+
+        <div class="section-title" data-aos="fade-up">
+          <h2>Core Features</h2>
+          <p>Everything you need to manage your finances effectively.</p>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-6 order-2 order-lg-1">
+            <div class="icon-box mt-5 mt-lg-0" data-aos="fade-up">
+              <i class="bx bx-receipt"></i>
+              <h4>Professional Accounting Core</h4>
+              <p>Utilize a full double-entry system. Manage journal entries, customize your Chart of Accounts, and maintain a clean, auditable general ledger.</p>
+            </div>
+            <div class="icon-box mt-5" data-aos="fade-up" data-aos-delay="100">
+              <i class="bx bx-cube-alt"></i>
+              <h4>Integrated Inventory Control</h4>
+              <p>Track product stock from purchase orders to sales invoices. The system automatically updates inventory levels and posts Cost of Goods Sold (COGS) entries.</p>
+            </div>
+            <div class="icon-box mt-5" data-aos="fade-up" data-aos-delay="200">
+              <i class="bi bi-building"></i>
+              <h4>Asset & Depreciation Management</h4>
+              <p>Record fixed assets, track their value, and let the system automatically post monthly depreciation entries to the correct accounts for you.</p>
+            </div>
+            <div class="icon-box mt-5" data-aos="fade-up" data-aos-delay="300">
+              <i class="bi bi-file-earmark-bar-graph"></i>
+              <h4>Instant Financial Reporting</h4>
+              <p>Generate essential reports like Trial Balance, Income Statement, and Balance Sheet with a single click, using real-time data from your transactions.</p>
+            </div>
+          </div>
+          <div class="image col-lg-6 order-1 order-lg-2" style='background-image: url("{% static 'public/assets/img/services.jpg' %}");' data-aos="fade-left" data-aos-delay="100"></div>
+        </div>
+
+      </div>
+    </section><!-- End Services Section -->
+
+    <!-- ======= How It Works Section (IMPROVED) ======= -->
+    <section id="guide" class="services section-bg">
+        <div class="container">
+  
+          <div class="section-title" data-aos="fade-up">
+            <h2>How It Works</h2>
+            <p>Get started in four simple steps.</p>
+          </div>
+  
+          <div class="row">
+            <!-- Step 1 -->
+            <div class="col-lg-3 col-md-6 d-flex align-items-stretch" data-aos="fade-up" data-aos-delay="100">
+              <div class="icon-box w-100">
+                <div class="icon"><i class="bx bx-user-plus"></i></div>
+                <h4>Step 1: Register</h4>
+                <p>Choose a plan or start a free trial. Fill out the form to create your company and admin account instantly.</p>
+              </div>
+            </div>
+  
+            <!-- Step 2 -->
+            <div class="col-lg-3 col-md-6 d-flex align-items-stretch mt-4 mt-lg-0" data-aos="fade-up" data-aos-delay="200">
+              <div class="icon-box w-100">
+                <div class="icon"><i class="bx bx-cog"></i></div>
+                <h4>Step 2: Set Up</h4>
+                <p>Your account is pre-configured. Visit Admin Settings to customize company details, currency, and logo.</p>
+              </div>
+            </div>
+  
+            <!-- Step 3 -->
+            <div class="col-lg-3 col-md-6 d-flex align-items-stretch mt-4 mt-lg-0" data-aos="fade-up" data-aos-delay="300">
+              <div class="icon-box w-100">
+                <div class="icon"><i class="bx bx-transfer-alt"></i></div>
+                <h4>Step 3: Transact</h4>
+                <p>Add customers, vendors, and items. Start creating invoices and purchases while the system handles the accounting.</p>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="col-lg-3 col-md-6 d-flex align-items-stretch mt-4 mt-lg-0" data-aos="fade-up" data-aos-delay="400">
+                <div class="icon-box w-100">
+                  <div class="icon"><i class="bx bx-bar-chart-alt-2"></i></div>
+                  <h4>Step 4: Report</h4>
+                  <p>Generate real-time financial reports like the Income Statement and Balance Sheet with a single click.</p>
+                </div>
+              </div>
+  
+          </div>
+  
+        </div>
+    </section><!-- End How It Works Section -->
+
+    <!-- ======= Pricing Section (NOW DYNAMIC) ======= -->
+    <section id="pricing" class="pricing">
+      <div class="container">
+
+        <div class="section-title" data-aos="fade-up">
+          <h2>Pricing</h2>
+          <p>Choose the perfect plan for your business needs. All prices are for a one-year subscription.</p>
+          
+          {% if exchange_rate %}
+            <p class="mt-3 fst-italic" style="font-size: 14px; color: #555;">
+              NGN prices are estimates based on the current rate of <strong>1 USD = ₦{{ exchange_rate.rate|floatformat:2 }}</strong>.
+              This rate is valid until {{ exchange_rate.valid_until|date:"F j, Y" }}.
+            </p>
+          {% endif %}
+        </div>
+
+        <div class="row justify-content-center">
+
+          {% for plan in plans %}
+          <div class="col-lg-3 col-md-6 mb-4">
+            <div class="box h-100 {% if plan.code == 'STANDARD' %}recommended{% endif %}" data-aos="zoom-in" data-aos-delay="{{ forloop.counter0 }}00">
+              
+              {% if plan.code == 'STANDARD' %}<span class="recommended-badge">Recommended</span>{% endif %}
+              
+              <h3>{{ plan.name }}</h3>
+              
+              <h4><sup>$</sup>{{ plan.price_usd|floatformat:0 }}<span> / year</span></h4>
+              
+              {% if plan.price_ngn %}
+                <h5 style="font-size: 16px; color: #6c757d; margin-top: -15px; margin-bottom: 20px;">
+                    ~ <sup>₦</sup>{{ plan.price_ngn|floatformat:0|intcomma }}<span> / year</span>
+                </h5>
+              {% endif %}
+
+              <ul>
+                {% for feature in plan.features %}
+                  <li><i class="bx bx-check"></i> {{ feature }}</li>
+                {% endfor %}
+              </ul>
+
+              <div class="btn-wrap">
+                <a href="{% url 'subscriptions:register_form' plan.code %}" class="btn-buy">Sign Up</a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+
+        </div>
+
+        <div class="row justify-content-center mt-5" data-aos="fade-up">
+            <div class="col-lg-8 text-center">
+                <div class="free-trial-promo p-4" style="background-color: #f1f7ff; border-radius: 8px;">
+                    <h3 style="font-weight: 600;">Not Ready to Commit?</h3>
+                    <p class="lead">
+                        Explore all our features with a full-access, 30-day free trial. No credit card required.
+                    </p>
+                    <a href="{% url 'subscriptions:register_form' 'TRIAL' %}" class="btn-get-started scrollto" style="background: #2487ce; color: #fff; padding: 10px 30px;">Start Your Free Trial</a>
+                </div>
+            </div>
+        </div>
+
+      </div>
+    </section><!-- End Pricing Section -->
+
+    <!-- ======= Contact Section ======= -->
+    <section id="contact" class="contact">
+      <div class="container">
+
+        <div class="section-title">
+          <h2>Contact</h2>
+          <p>Have questions? We'd love to hear from you.</p>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-4">
+            <div class="info d-flex flex-column justify-content-center" data-aos="fade-right">
+              <div class="address">
+                <i class="bi bi-geo-alt"></i>
+                <h4>Location:</h4>
+                <p>123 Business Avenue,<br>Lagos, Nigeria</p>
+              </div>
+
+              <div class="email">
+                <i class="bi bi-envelope"></i>
+                <h4>Email:</h4>
+                <p>support@wjaccounting.com</p>
+              </div>
+
+              <div class="phone">
+                <i class="bi bi-phone"></i>
+                <h4>Call:</h4>
+                <p>+234 801 234 5678</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-8 mt-5 mt-lg-0">
+            <form action="#" method="post" role="form" class="php-email-form" data-aos="fade-left">
+              <div class="row">
+                <div class="col-md-6 form-group">
+                  <input type="text" name="name" class="form-control" id="name" placeholder="Your Name" required>
+                </div>
+                <div class="col-md-6 form-group mt-3 mt-md-0">
+                  <input type="email" class="form-control" name="email" id="email" placeholder="Your Email" required>
+                </div>
+              </div>
+              <div class="form-group mt-3">
+                <input type="text" class="form-control" name="subject" id="subject" placeholder="Subject" required>
+              </div>
+              <div class="form-group mt-3">
+                <textarea class="form-control" name="message" rows="5" placeholder="Message" required></textarea>
+              </div>
+              <div class="my-3"><div class="loading">Loading</div><div class="error-message"></div><div class="sent-message">Your message has been sent. Thank you!</div></div>
+              <div class="text-center"><button type="submit">Send Message</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section><!-- End Contact Section -->
+{% endblock %}

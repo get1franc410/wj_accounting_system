@@ -1,0 +1,94 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\emails\audit_reminder.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>Audit Reminder: {{ reminder_type|default:"Financial Review" }}</h2>
+
+<p>Dear {{ auditor_company.name|default:"Auditor" }},</p>
+
+<p>This is a reminder that the following audit/compliance task is due for <strong>{{ company.name }}</strong>:</p>
+
+<div class="alert alert-warning">
+    <strong>Reminder Details:</strong><br>
+    Client Company: <strong>{{ company.name }}</strong><br>
+    Task: {{ reminder_type|default:"Quarterly Financial Review" }}<br>
+    Due Date: {{ due_date|date:"d M Y"|default:"To be scheduled" }}<br>
+    Days Until Due: {{ days_until_due|default:"30" }} days<br>
+    {% if days_until_due <= 0 %}
+        <span style="color: red; font-weight: bold;">⚠️ OVERDUE</span>
+    {% elif days_until_due <= 7 %}
+        <span style="color: orange; font-weight: bold;">⚠️ DUE SOON</span>
+    {% endif %}
+</div>
+
+<h3>Client Company Information:</h3>
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Company Name:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.name }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Industry:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.industry|default:"Not specified" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Registration Number:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.registration_number|default:"Not provided" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Tax Number:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.tax_number|default:"Not provided" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Phone:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.phone|default:"Not provided" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Email:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.email|default:"Not provided" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Address:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.address|default:"Not provided" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Currency:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.get_currency_display }}</td>
+    </tr>
+</table>
+
+{% if additional_info %}
+<h3>Additional Information:</h3>
+<ul>
+    {% for key, value in additional_info.items %}
+    <li><strong>{{ key }}:</strong> {{ value }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<h3>Recommended Actions:</h3>
+<ul>
+    <li>Review all financial records for the period ending {{ period_end_date }}</li>
+    <li>Ensure all transactions are properly documented</li>
+    <li>Verify account reconciliations are up to date</li>
+    <li>Prepare necessary documentation for audit procedures</li>
+    <li>Schedule audit meetings with {{ company.name }} management</li>
+    <li>Review compliance with applicable accounting standards</li>
+</ul>
+
+<p>Please contact {{ company.name }} directly to schedule the audit:</p>
+<ul>
+    {% if company.phone %}<li><strong>Phone:</strong> {{ company.phone }}</li>{% endif %}
+    {% if company.email %}<li><strong>Email:</strong> {{ company.email }}</li>{% endif %}
+    {% if company.address %}<li><strong>Address:</strong> {{ company.address }}</li>{% endif %}
+</ul>
+
+<p>If you have any questions about this audit assignment, please contact our system administrator.</p>
+
+<p>Best regards,<br>
+<strong>{{ company.name }} Accounting System</strong><br>
+{% if auditor_company %}
+Audit services provided by: <strong>{{ auditor_company.name }}</strong>
+{% endif %}
+</p>
+{% endblock %}

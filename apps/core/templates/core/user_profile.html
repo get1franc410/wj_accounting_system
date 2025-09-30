@@ -1,0 +1,232 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\core\templates\core\user_profile.html -->
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/professional-forms.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="page-container" style="padding-left: 2rem;">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>My Profile</h2>
+            <p>Manage your personal account information</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            <a href="{% url 'auth:change_password' %}" class="btn btn-cancel">
+                Change Password
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Personal Information Section -->
+            <div class="form-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h5>Personal Information</h5>
+                    </div>
+                    <div class="section-body">
+                        <form method="post" class="professional-form">
+                            {% csrf_token %}
+                            
+                            <!-- Basic Details -->
+                            <div class="form-row-2col">
+                                <div class="form-group">
+                                    <label class="form-label">First Name</label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger">{{ form.first_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name</label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger">{{ form.last_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Additional fields if they exist in your form -->
+                            {% for field in form %}
+                                {% if field.name not in "first_name,last_name,email" %}
+                                    <div class="form-group">
+                                        <label class="form-label">{{ field.label }}</label>
+                                        {{ field }}
+                                        {% if field.errors %}
+                                            <div class="text-danger">{{ field.errors }}</div>
+                                        {% endif %}
+                                        {% if field.help_text %}
+                                            <small class="text-muted">{{ field.help_text }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-cancel" onclick="goBack()">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="btn btn-save">
+                                    Update Profile
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Account Information Section -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h5>Account Information</h5>
+                    </div>
+                    <div class="section-body">
+                        <div class="info-item">
+                            <label>Username:</label>
+                            <span>{{ user.username }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>User Type:</label>
+                            <span class="account-badge">{{ user.get_user_type_display }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Company:</label>
+                            <span>{{ user.company.name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Member Since:</label>
+                            <span>{{ user.date_joined|date:"F d, Y" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Last Login:</label>
+                            <span>
+                                {% if user.last_login %}
+                                    {{ user.last_login|timesince }} ago
+                                {% else %}
+                                    <span class="no-account">Never</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Text Section -->
+            <div class="help-text-section">
+                <div class="help-content">
+                    <p><strong>Profile Tips:</strong> Keep your profile information up to date for better system communication. Your email is used for important notifications and password resets.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+}
+
+.info-item span {
+    color: #2c3e50;
+}
+
+.account-badge {
+    background-color: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.no-account {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Help Text Section */
+.help-text-section {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.help-content {
+    font-size: 13px;
+    color: #6c757d;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.help-content p {
+    margin: 0;
+}
+
+/* Additional spacing for left border */
+.page-container {
+    border-left: 3px solid transparent;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-container {
+        padding-left: 1rem !important;
+    }
+    
+    .help-text-section {
+        padding: 0.5rem 1rem;
+    }
+    
+    .help-content {
+        font-size: 12px;
+    }
+}
+</style>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/dashboard/';
+    }
+}
+</script>
+{% endblock %}

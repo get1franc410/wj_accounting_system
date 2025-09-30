@@ -1,0 +1,254 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\assets\templates\assets\asset_form.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if 'update' in request.path %}Edit{% else %}Create{% endif %} Asset{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'assets/css/professional-forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>{% if 'update' in request.path %}Edit{% else %}Create{% endif %} Asset</h2>
+            <p>{% if 'update' in request.path %}Update asset information and settings{% else %}Add a new asset to your register{% endif %}</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            <a href="{% url 'assets:asset-list' %}" class="btn btn-cancel">
+                Asset Register
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="form-container">
+        <form method="post" class="professional-form">
+            {% csrf_token %}
+            
+            <!-- Basic Asset Information -->
+            <div class="form-section mb-4">
+                <div class="section-header">
+                    <h6>Basic Asset Information</h6>
+                </div>
+                <div class="section-body">
+                    <div class="form-row-2col">
+                        <div>
+                            <label for="{{ form.name.id_for_label }}" class="form-label required">Asset Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="form-error">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.purchase_date.id_for_label }}" class="form-label required">Purchase Date</label>
+                            {{ form.purchase_date }}
+                            {% if form.purchase_date.errors %}
+                                <div class="form-error">{{ form.purchase_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row-1col">
+                        <div>
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="form-error">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Information -->
+            <div class="form-section mb-4">
+                <div class="section-header">
+                    <h6>Financial Information</h6>
+                </div>
+                <div class="section-body">
+                    <div class="form-row-3col">
+                        <div>
+                            <label for="{{ form.purchase_price.id_for_label }}" class="form-label required">Purchase Price</label>
+                            {{ form.purchase_price }}
+                            {% if form.purchase_price.errors %}
+                                <div class="form-error">{{ form.purchase_price.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.salvage_value.id_for_label }}" class="form-label">Salvage Value</label>
+                            {{ form.salvage_value }}
+                            {% if form.salvage_value.errors %}
+                                <div class="form-error">{{ form.salvage_value.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.useful_life_years.id_for_label }}" class="form-label required">Useful Life (Years)</label>
+                            {{ form.useful_life_years }}
+                            {% if form.useful_life_years.errors %}
+                                <div class="form-error">{{ form.useful_life_years.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Assignments -->
+            <div class="form-section mb-4">
+                <div class="section-header">
+                    <h6>Account Assignments</h6>
+                </div>
+                <div class="section-body">
+                    <div class="form-row-1col">
+                        <div>
+                            <label for="{{ form.asset_account.id_for_label }}" class="form-label required">Asset Account</label>
+                            {{ form.asset_account }}
+                            {% if form.asset_account.errors %}
+                                <div class="form-error">{{ form.asset_account.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">The main asset account (e.g., 'Vehicles', 'Machinery')</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row-2col">
+                        <div>
+                            <label for="{{ form.accumulated_depreciation_account.id_for_label }}" class="form-label required">Accumulated Depreciation Account</label>
+                            {{ form.accumulated_depreciation_account }}
+                            {% if form.accumulated_depreciation_account.errors %}
+                                <div class="form-error">{{ form.accumulated_depreciation_account.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Contra-asset account for accumulated depreciation</div>
+                        </div>
+                        <div>
+                            <label for="{{ form.depreciation_expense_account.id_for_label }}" class="form-label required">Depreciation Expense Account</label>
+                            {{ form.depreciation_expense_account }}
+                            {% if form.depreciation_expense_account.errors %}
+                                <div class="form-error">{{ form.depreciation_expense_account.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Expense account to debit for depreciation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Depreciation Settings -->
+            <div class="form-section mb-4">
+                <div class="section-header">
+                    <h6>Depreciation Settings</h6>
+                </div>
+                <div class="section-body">
+                    <div class="form-row-3col">
+                        <div>
+                            <label for="{{ form.depreciation_method.id_for_label }}" class="form-label required">Depreciation Method</label>
+                            {{ form.depreciation_method }}
+                            {% if form.depreciation_method.errors %}
+                                <div class="form-error">{{ form.depreciation_method.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help" id="depreciation-help">
+                                Select the method to calculate annual depreciation
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Units of Production specific field -->
+                    <div class="form-row-1col" id="units-field" style="display: none;">
+                        <div>
+                            <label for="{{ form.estimated_total_units.id_for_label }}" class="form-label">Estimated Total Units</label>
+                            {{ form.estimated_total_units }}
+                            {% if form.estimated_total_units.errors %}
+                                <div class="form-error">{{ form.estimated_total_units.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Total expected units of production over the asset's life</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-save">
+                    {% if 'update' in request.path %}Update Asset{% else %}Save Asset{% endif %}
+                </button>
+                <button type="button" class="btn btn-cancel" onclick="goBack()">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Utility function for going back
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "assets:asset-list" %}';
+    }
+}
+
+// Add form validation feedback
+document.addEventListener('DOMContentLoaded', function() {
+    // Add classes to form fields for consistent styling
+    const formControls = document.querySelectorAll('input, select, textarea');
+    formControls.forEach(function(control) {
+        if (!control.classList.contains('form-control') && !control.classList.contains('form-select')) {
+            if (control.tagName.toLowerCase() === 'select') {
+                control.classList.add('form-select');
+            } else {
+                control.classList.add('form-control');
+            }
+        }
+    });
+    
+    // Add required indicators
+    const requiredLabels = document.querySelectorAll('.form-label.required');
+    requiredLabels.forEach(function(label) {
+        if (!label.querySelector('.required-indicator')) {
+            const indicator = document.createElement('span');
+            indicator.className = 'required-indicator';
+            indicator.textContent = ' *';
+            label.appendChild(indicator);
+        }
+    });
+
+    // Depreciation method help text and conditional fields
+    const depreciationMethodField = document.getElementById('{{ form.depreciation_method.id_for_label }}');
+    const unitsField = document.getElementById('units-field');
+    const helpDiv = document.getElementById('depreciation-help');
+    
+    function updateDepreciationHelp() {
+        const method = depreciationMethodField.value;
+        const helpTexts = {
+            'SL': '<strong>Straight-Line:</strong> Equal depreciation each year - simple and widely used',
+            'DB': '<strong>Declining Balance:</strong> Double declining balance - accelerated depreciation (legacy)',
+            'DD': '<strong>Double Declining Balance:</strong> 2x straight-line rate, accelerated depreciation',
+            'DB150': '<strong>150% Declining Balance:</strong> 1.5x straight-line rate, moderate acceleration',
+            'SYD': '<strong>Sum of Years Digits:</strong> Higher depreciation in early years, decreasing over time',
+            'UOP': '<strong>Units of Production:</strong> Depreciation based on actual usage/production',
+            'MACRS': '<strong>MACRS:</strong> US tax depreciation system with prescribed rates',
+            'NONE': '<strong>No Depreciation:</strong> Asset does not depreciate (e.g., land)'
+        };
+        
+        helpDiv.innerHTML = helpTexts[method] || 'Select a depreciation method';
+        
+        // Show/hide units field
+        if (method === 'UOP') {
+            unitsField.style.display = 'block';
+        } else {
+            unitsField.style.display = 'none';
+        }
+    }
+    
+    if (depreciationMethodField) {
+        depreciationMethodField.addEventListener('change', updateDepreciationHelp);
+        updateDepreciationHelp(); // Initialize on page load
+    }
+});
+</script>
+{% endblock %}

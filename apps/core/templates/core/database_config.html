@@ -1,0 +1,416 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\core\templates\core\database_config.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Database Configuration{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Database Configuration</h2>
+            <p>Configure database connection for your accounting system</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Current Configuration Section -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>Current Database Configuration</h6>
+                    </div>
+                    <div class="section-body">
+                        {% if current_config %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <label>Database Type:</label>
+                                        <span>{{ current_config.type|title }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Host:</label>
+                                        <span>{{ current_config.host|default:"localhost" }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Port:</label>
+                                        <span>{{ current_config.port|default:"N/A" }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <label>Database Name:</label>
+                                        <span>{{ current_config.name }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Status:</label>
+                                        <span class="status-indicator status-success">Connected</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert-box alert-warning">
+                                <p class="mb-0">No database configuration found. Using default SQLite database.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Form Section -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>Configure Database Connection</h6>
+                    </div>
+                    <div class="section-body">
+                        <form method="post" id="dbConfigForm" class="professional-form">
+                            {% csrf_token %}
+                            
+                            <div class="form-group">
+                                <label class="form-label">Database Type</label>
+                                <select name="db_type" class="form-control" id="dbTypeSelect">
+                                    <option value="sqlite">SQLite (Default)</option>
+                                    <option value="postgresql">PostgreSQL</option>
+                                </select>
+                            </div>
+
+                            <!-- PostgreSQL Configuration -->
+                            <div id="postgresqlConfig" style="display: none;">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Host</label>
+                                        <input type="text" name="db_host" class="form-control" value="localhost">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Port</label>
+                                        <input type="number" name="db_port" class="form-control" value="5432">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Database Name</label>
+                                    <input type="text" name="db_name" class="form-control" placeholder="accounting_system">
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Username</label>
+                                        <input type="text" name="db_user" class="form-control" placeholder="postgres">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Password</label>
+                                        <input type="password" name="db_password" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SQLite Configuration -->
+                            <div id="sqliteConfig">
+                                <div class="form-group">
+                                    <label class="form-label">Database File</label>
+                                    <input type="text" name="sqlite_path" class="form-control" value="db.sqlite3" readonly>
+                                    <small class="form-text">SQLite database file location</small>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-cancel" onclick="testConnection()">
+                                    Test Connection
+                                </button>
+                                <button type="submit" class="btn btn-save">
+                                    Save Configuration
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Database Installation Helper -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>Database Installation</h6>
+                    </div>
+                    <div class="section-body">
+                        <p class="mb-3">Need to install PostgreSQL?</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-cancel" onclick="downloadPostgreSQL()">
+                                Download PostgreSQL
+                            </button>
+                            <button class="btn btn-cancel" onclick="showInstallInstructions()">
+                                Installation Guide
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Information -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>System Information</h6>
+                    </div>
+                    <div class="section-body">
+                        <div class="info-item">
+                            <label>Current Database:</label>
+                            <span>{{ current_config.type|default:"SQLite" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Django Version:</label>
+                            <span>{{ django_version }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Python Version:</label>
+                            <span>{{ python_version }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Installation Instructions Modal -->
+<div class="modal fade" id="installInstructionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">PostgreSQL Installation Guide</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="accordion" id="installAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#windowsInstall">
+                                Windows Installation
+                            </button>
+                        </h2>
+                        <div id="windowsInstall" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <ol>
+                                    <li>Download PostgreSQL from <a href="https://www.postgresql.org/download/windows/" target="_blank">postgresql.org</a></li>
+                                    <li>Run the installer as Administrator</li>
+                                    <li>Follow the installation wizard</li>
+                                    <li>Remember the password you set for the 'postgres' user</li>
+                                    <li>Default port is 5432 (keep this unless you have conflicts)</li>
+                                    <li>After installation, create a database for your accounting system</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#createDatabase">
+                                Creating Database
+                            </button>
+                        </h2>
+                        <div id="createDatabase" class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                <p>After PostgreSQL installation:</p>
+                                <ol>
+                                    <li>Open pgAdmin (PostgreSQL management tool)</li>
+                                    <li>Connect to your PostgreSQL server</li>
+                                    <li>Right-click on "Databases" → "Create" → "Database"</li>
+                                    <li>Name it "accounting_system" (or your preferred name)</li>
+                                    <li>Click "Save"</li>
+                                </ol>
+                                <div class="alert alert-info">
+                                    <strong>Alternative:</strong> Use command line:<br>
+                                    <code>createdb -U postgres accounting_system</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('dbTypeSelect').addEventListener('change', function() {
+    const dbType = this.value;
+    const postgresqlConfig = document.getElementById('postgresqlConfig');
+    const sqliteConfig = document.getElementById('sqliteConfig');
+    
+    if (dbType === 'postgresql') {
+        postgresqlConfig.style.display = 'block';
+        sqliteConfig.style.display = 'none';
+    } else {
+        postgresqlConfig.style.display = 'none';
+        sqliteConfig.style.display = 'block';
+    }
+});
+
+function testConnection() {
+    const formData = new FormData(document.getElementById('dbConfigForm'));
+    formData.append('action', 'test_connection');
+    
+    fetch('{% url "core:database_config" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Database connection successful!', 'success');
+        } else {
+            showAlert('Connection failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('Error testing connection: ' + error, 'error');
+    });
+}
+
+function downloadPostgreSQL() {
+    window.open('https://www.postgresql.org/download/windows/', '_blank');
+}
+
+function showInstallInstructions() {
+    new bootstrap.Modal(document.getElementById('installInstructionsModal')).show();
+}
+
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/admin/';
+    }
+}
+
+function showAlert(message, type) {
+    // Simple alert replacement - you can enhance this
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at top of page
+    const pageContainer = document.querySelector('.page-container');
+    pageContainer.insertBefore(alertDiv, pageContainer.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<!-- Additional Styles -->
+<style>
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+}
+
+.info-item span {
+    color: #2c3e50;
+}
+
+.alert-box {
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.d-grid {
+    display: grid;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+/* Modal customizations */
+.modal-content {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.accordion-button {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.accordion-body {
+    padding: 1.5rem;
+}
+
+.accordion-body ol {
+    padding-left: 1.5rem;
+}
+
+.accordion-body li {
+    margin-bottom: 0.5rem;
+}
+
+.accordion-body code {
+    background-color: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+</style>
+{% endblock %}

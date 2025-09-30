@@ -1,0 +1,146 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\assets\templates\assets\add_maintenance.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add Maintenance Record{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'assets/css/professional-forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Add Maintenance Record</h2>
+            <p>
+                {% if asset %}
+                    Add maintenance for {{ asset.name }}
+                {% else %}
+                    Add new maintenance record
+                {% endif %}
+            </p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Maintenance Details</h6>
+            </div>
+            <div class="section-body">
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <form method="post" class="professional-form">
+                    {% csrf_token %}
+                    
+                    <!-- Show asset selection only when not tied to specific asset -->
+                    {% if form.asset %}
+                        <div class="form-row-1col">
+                            <div>
+                                <label for="{{ form.asset.id_for_label }}" class="form-label">Asset <span class="text-danger">*</span></label>
+                                {{ form.asset }}
+                                {% if form.asset.errors %}
+                                    <div class="field-error">
+                                        {% for error in form.asset.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-row-2col">
+                        <div>
+                            <label for="{{ form.maintenance_date.id_for_label }}" class="form-label">Maintenance Date <span class="text-danger">*</span></label>
+                            {{ form.maintenance_date }}
+                            {% if form.maintenance_date.errors %}
+                                <div class="field-error">
+                                    {% for error in form.maintenance_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.maintenance_type.id_for_label }}" class="form-label">Maintenance Type <span class="text-danger">*</span></label>
+                            {{ form.maintenance_type }}
+                            {% if form.maintenance_type.errors %}
+                                <div class="field-error">
+                                    {% for error in form.maintenance_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row-1col">
+                        <div>
+                            <label for="{{ form.cost.id_for_label }}" class="form-label">Cost <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ request.user.company.currency_symbol }}</span>
+                                {{ form.cost }}
+                            </div>
+                            {% if form.cost.errors %}
+                                <div class="field-error">
+                                    {% for error in form.cost.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row-1col">
+                        <div>
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description <span class="text-danger">*</span></label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="field-error">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="goBack()">Cancel</button>
+                        <button type="submit" class="btn btn-save">Save Maintenance Record</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        {% if asset %}
+            window.location.href = '{% url "assets:asset-detail" asset.pk %}';
+        {% else %}
+            window.location.href = '{% url "assets:maintenance-list" %}';
+        {% endif %}
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,326 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\assets\templates\assets\maintenance_list.html -->
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Asset Maintenance Records{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'assets/css/professional-forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Maintenance Records</h2>
+            <p>Track and manage asset maintenance activities</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            <a href="{% url 'assets:asset-list' %}" class="btn btn-cancel">
+                Asset Register
+            </a>
+            <a href="{% url 'assets:add-maintenance' asset_pk=0 %}" class="btn btn-save">
+                Add Maintenance
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="list-container">
+        <!-- Search and Filter Section -->
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Search and Filter Maintenance Records</h6>
+            </div>
+            <div class="section-body">
+                <form method="get" class="filter-form">
+                    <!-- Primary Filters Row -->
+                    <div class="form-row-3col">
+                        <div>
+                            <label for="search" class="form-label">Search Records</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Asset name, description...">
+                        </div>
+                        <div>
+                            <label for="asset" class="form-label">Asset</label>
+                            <div class="dropdown" data-filter="true">
+                                <select class="form-select" id="asset" name="asset">
+                                    <option value="">All Assets</option>
+                                    {% for asset in assets %}
+                                        <option value="{{ asset.id }}" {% if selected_asset == asset.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ asset.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="maintenance_type" class="form-label">Maintenance Type</label>
+                            <select class="form-select" id="maintenance_type" name="maintenance_type">
+                                <option value="">All Types</option>
+                                {% for value, label in maintenance_type_choices %}
+                                    <option value="{{ value }}" {% if selected_maintenance_type == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Date Range Filters Row -->
+                    <div class="form-row-2col">
+                        <div>
+                            <label for="date_from" class="form-label">Maintenance Date From</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                        </div>
+                        <div>
+                            <label for="date_to" class="form-label">Maintenance Date To</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons Row -->
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-save">
+                            Apply Filters
+                        </button>
+                        <a href="{% url 'assets:maintenance-list' %}" class="btn btn-cancel">
+                            Clear All
+                        </a>
+                        {% if search_query or selected_asset or selected_maintenance_type or date_from or date_to %}
+                        <span class="filter-indicator">
+                            Filters Active
+                        </span>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Maintenance Records Table -->
+        <div class="section-container">
+            <div class="section-body table-section">
+                <div class="table-responsive">
+                    <table class="table table-professional">
+                        <thead>
+                            <tr>
+                                <th>Maintenance Date</th>
+                                <th>Asset Details</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th class="text-end">Cost</th>
+                                <th>Next Due</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for maintenance in maintenances %}
+                            <tr>
+                                <td>
+                                    <div class="date-info">
+                                        <div class="main-date">{{ maintenance.maintenance_date|date:"M d, Y" }}</div>
+                                        <div class="sub-date">{{ maintenance.maintenance_date|timesince }} ago</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="asset-info">
+                                        <a href="{% url 'assets:asset-detail' maintenance.asset.pk %}" class="asset-link">
+                                            {{ maintenance.asset.name }}
+                                        </a>
+                                        {% if maintenance.asset.asset_tag %}
+                                            <div class="asset-tag">Tag: {{ maintenance.asset.asset_tag }}</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="maintenance-type maintenance-type-{{ maintenance.maintenance_type|lower }}">
+                                        {{ maintenance.get_maintenance_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="maintenance-desc">
+                                        {{ maintenance.description|truncatechars:60 }}
+                                        {% if maintenance.performed_by %}
+                                            <div class="performed-by">By: {{ maintenance.performed_by.get_full_name|default:maintenance.performed_by.username }}</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    {% if maintenance.cost %}
+                                        <span class="cost-amount">{{ currency_symbol }}{{ maintenance.cost|floatformat:2|intcomma }}</span>
+                                    {% else %}
+                                        <span class="no-cost">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if maintenance.next_maintenance_date %}
+                                        <div class="due-date">
+                                            <div class="due-main">{{ maintenance.next_maintenance_date|date:"M d, Y" }}</div>
+                                            {% if maintenance.is_maintenance_overdue %}
+                                                <div class="due-status overdue">Overdue</div>
+                                            {% elif maintenance.is_maintenance_due %}
+                                                <div class="due-status due">Due Now</div>
+                                            {% else %}
+                                                <div class="due-status upcoming">Upcoming</div>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="no-due">Not set</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-links">
+                                        <a href="{% url 'assets:asset-detail' maintenance.asset.pk %}" 
+                                           class="action-link" title="View Asset">
+                                            View Asset
+                                        </a>
+                                        {% if user.user_type == 'ADMIN' or user.user_type == 'ACCOUNTANT' %}
+                                            <a href="{% url 'assets:add-maintenance' asset_pk=maintenance.asset.pk %}" 
+                                               class="action-link" title="Add Maintenance">
+                                                Add Maintenance
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    <div class="empty-content">
+                                        <p class="empty-message">
+                                            {% if search_query or selected_asset or selected_maintenance_type or date_from or date_to %}
+                                                No maintenance records found matching your criteria.
+                                            {% else %}
+                                                No maintenance records found. Start by adding your first maintenance record.
+                                            {% endif %}
+                                        </p>
+                                        <a href="{% url 'assets:add-maintenance' asset_pk=0 %}" class="btn btn-save">
+                                            Add Maintenance Record
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics - Moved Below Table -->
+        {% if total_maintenances > 0 %}
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Maintenance Summary</h6>
+            </div>
+            <div class="section-body">
+                <div class="form-row-4col summary-stats-plain">
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Total Records</div>
+                        <div class="stat-value">{{ total_maintenances }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Total Cost</div>
+                        <div class="stat-value">{{ currency_symbol }}{{ total_cost|floatformat:2|intcomma }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Last 30 Days</div>
+                        <div class="stat-value">{{ recent_maintenances }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Average Cost</div>
+                        <div class="stat-value">
+                            {% if total_maintenances > 0 %}
+                                {{ currency_symbol }}{% widthratio total_cost total_maintenances 1 %}
+                            {% else %}
+                                {{ currency_symbol }}0.00
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Maintenance Type Breakdown - Using Your Existing Types -->
+                <div class="form-row-3col breakdown-stats-plain">
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Repairs</div>
+                        <div class="stat-value">{{ repair_count }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Routine Service</div>
+                        <div class="stat-value">{{ routine_count }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Upgrades</div>
+                        <div class="stat-value">{{ upgrade_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Pagination -->
+        {% if maintenances.has_other_pages %}
+        <div class="section-container">
+            <div class="section-body">
+                <nav aria-label="Maintenance pagination" class="pagination-nav">
+                    <ul class="pagination">
+                        {% if maintenances.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ maintenances.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in maintenances.paginator.page_range %}
+                            {% if maintenances.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > maintenances.number|add:'-3' and num < maintenances.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if maintenances.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ maintenances.next_page_number }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <div class="pagination-info">
+                    Showing {{ maintenances.start_index }} to {{ maintenances.end_index }} of {{ maintenances.paginator.count }} maintenance records
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Load JavaScript Files -->
+<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+
+<script>
+// Initialize dropdown filters
+document.addEventListener('DOMContentLoaded', function() {
+    $('.dropdown[data-filter="true"]').dropdownFilter({
+        filterPlaceholder: 'Search assets...',
+        noResultsText: 'No assets found',
+        maxHeight: '300px'
+    });
+});
+
+// Utility function for going back
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "assets:asset-list" %}';
+    }
+}
+</script>
+{% endblock %}

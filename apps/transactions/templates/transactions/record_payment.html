@@ -1,0 +1,133 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\transactions\templates\transactions\record_payment.html -->
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Record Payment</h2>
+            <p class="text-muted mb-0">Record payment for Transaction #{{ transaction.id }}</p>
+        </div>
+        <a href="{% url 'transactions:transaction_detail' transaction.pk %}" class="btn btn-back">
+            ← Back to Transaction
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Payment Amount</label>
+                                <input type="number" name="payment_amount" class="form-control" 
+                                       step="0.01" min="0" max="{{ transaction.balance_due }}" 
+                                       value="{{ transaction.balance_due }}" required>
+                                <small class="text-muted">Maximum: {{ transaction.balance_due }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Payment Date</label>
+                                <input type="date" name="payment_date" class="form-control" 
+                                       value="{% now 'Y-m-d' %}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Payment Method</label>
+                                <select name="payment_method" class="form-select" required>
+                                    <option value="">Select Payment Method</option>
+                                    <option value="CASH">Cash</option>
+                                    <option value="BANK_TRANSFER">Bank Transfer</option>
+                                    <option value="CHEQUE">Cheque</option>
+                                    <option value="CARD">Card Payment</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Reference/Notes</label>
+                                <textarea name="payment_reference" class="form-control" rows="3" 
+                                          placeholder="Payment reference, cheque number, etc."></textarea>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'transactions:transaction_detail' transaction.pk %}" 
+                               class="btn btn-cancel">Cancel</a>
+                            <button type="submit" class="btn btn-save">Record Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Transaction Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Total Amount:</strong></div>
+                        <div class="col-6 text-end">{{ transaction.total_amount }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Amount Paid:</strong></div>
+                        <div class="col-6 text-end">{{ transaction.amount_paid }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Balance Due:</strong></div>
+                        <div class="col-6 text-end text-danger">{{ transaction.balance_due }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6"><strong>Customer:</strong></div>
+                        <div class="col-6 text-end">{{ transaction.customer.name|default:"N/A" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn-back {
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-save {
+    background: #28a745;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #218838;
+    color: white;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+</style>
+{% endblock %}

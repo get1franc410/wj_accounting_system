@@ -1,0 +1,336 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\assets\templates\assets\asset_list.html -->
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Fixed Assets{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'assets/css/professional-forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Asset Register</h2>
+            <p>Manage and track your fixed assets</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            <a href="{% url 'assets:maintenance-list' %}" class="btn btn-cancel">
+                Maintenance Records
+            </a>
+            <a href="{% url 'assets:asset-create' %}" class="btn btn-save">
+                Add New Asset
+            </a>
+        </div>
+    </div>
+
+    <!-- Export Buttons Section -->
+    <div class="export-section">
+        {% include 'components/export_buttons.html' with export_url='assets:export' %}
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="list-container">
+        <!-- Search and Filter Section -->
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Search and Filter Assets</h6>
+            </div>
+            <div class="section-body">
+                <form method="get" class="filter-form">
+                    <!-- Essential Filters Row -->
+                    <div class="form-row-3col">
+                        <div>
+                            <label for="search" class="form-label">Search Assets</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Asset name, tag, description...">
+                        </div>
+                        <div>
+                            <label for="category" class="form-label">Asset Account</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">All Asset Accounts</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="disposed" {% if selected_status == 'disposed' %}selected{% endif %}>Disposed</option>
+                                <option value="maintenance" {% if selected_status == 'maintenance' %}selected{% endif %}>Under Maintenance</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Filters - Collapsible -->
+                    <div class="advanced-filters">
+                        <div class="d-flex align-items-center mb-3">
+                            <button type="button" class="btn btn-link p-0 text-decoration-none" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false">
+                                <i class="fas fa-chevron-down me-2"></i>Advanced Filters
+                            </button>
+                        </div>
+                        
+                        <div class="collapse" id="advancedFilters">
+                            <div class="form-row-2col">
+                                <div>
+                                    <label for="date_from" class="form-label">Purchase Date From</label>
+                                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                                </div>
+                                <div>
+                                    <label for="date_to" class="form-label">Purchase Date To</label>
+                                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row-2col">
+                                <div>
+                                    <label for="min_value" class="form-label">Min Purchase Value ({{ currency_symbol }})</label>
+                                    <input type="number" class="form-control" id="min_value" name="min_value" 
+                                           value="{{ min_value }}" placeholder="0.00" step="0.01" min="0">
+                                </div>
+                                <div>
+                                    <label for="max_value" class="form-label">Max Purchase Value ({{ currency_symbol }})</label>
+                                    <input type="number" class="form-control" id="max_value" name="max_value" 
+                                           value="{{ max_value }}" placeholder="0.00" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Row -->
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-save">
+                            Apply Filters
+                        </button>
+                        <a href="{% url 'assets:asset-list' %}" class="btn btn-cancel">
+                            Clear All
+                        </a>
+                        {% if search_query or selected_category or selected_status or date_from or date_to or min_value or max_value %}
+                        <span class="filter-indicator">
+                            Filters Active
+                        </span>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Assets Table -->
+        <div class="section-container">
+            <div class="section-body table-section">
+                <div class="table-responsive">
+                    <table class="table table-professional">
+                        <thead>
+                            <tr>
+                                <th>Asset Details</th>
+                                <th>Asset Account</th>
+                                <th>Purchase Date</th>
+                                <th class="text-end">Purchase Price</th>
+                                <th class="text-end">Book Value</th>
+                                <th class="text-end">Maintenance Cost</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asset in assets %}
+                            <tr>
+                                <td>
+                                    <div class="asset-info">
+                                        <a href="{% url 'assets:asset-detail' pk=asset.pk %}" class="asset-link">
+                                            {{ asset.name }}
+                                        </a>
+                                        {% if asset.asset_tag %}
+                                            <div class="asset-tag">Tag: {{ asset.asset_tag }}</div>
+                                        {% endif %}
+                                        {% if asset.description %}
+                                            <div class="asset-desc">{{ asset.description|truncatechars:40 }}</div>
+                                        {% endif %}
+                                        {% if asset.location %}
+                                            <div class="asset-location">Location: {{ asset.location }}</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if asset.asset_account %}
+                                        <span class="account-badge">{{ asset.asset_account.name }}</span>
+                                    {% else %}
+                                        <span class="no-account">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ asset.purchase_date|date:"M d, Y" }}</td>
+                                <td class="text-end">
+                                    <span class="amount-value">{{ currency_symbol }}{{ asset.purchase_price|floatformat:2|intcomma }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="amount-value {% if asset.current_book_value < asset.salvage_value %}text-warning{% else %}text-success{% endif %}">
+                                        {{ currency_symbol }}{{ asset.current_book_value|floatformat:2|intcomma }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="amount-value">{{ currency_symbol }}{{ asset.total_maintenance_cost|floatformat:2|intcomma }}</span>
+                                </td>
+                                <td>
+                                    {% if asset.disposal_date %}
+                                        <span class="status-badge status-disposed">Disposed</span>
+                                    {% elif asset.is_under_maintenance %}
+                                        <span class="status-badge status-maintenance">Maintenance</span>
+                                    {% else %}
+                                        <span class="status-badge status-active">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-links">
+                                        <a href="{% url 'assets:asset-detail' pk=asset.pk %}" 
+                                           class="action-link" title="View Details">
+                                            View
+                                        </a>
+                                        {% if user.user_type == 'ADMIN' or user.user_type == 'ACCOUNTANT' %}
+                                            <a href="{% url 'assets:asset-update' pk=asset.pk %}" 
+                                               class="action-link" title="Edit Asset">
+                                                Edit
+                                            </a>
+                                            <a href="{% url 'assets:add-maintenance' asset_pk=asset.pk %}" 
+                                               class="action-link" title="Add Maintenance">
+                                                Maintenance
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <div class="empty-content">
+                                        <p class="empty-message">
+                                            {% if search_query or selected_category or selected_status or date_from or date_to %}
+                                                No assets found matching your criteria.
+                                            {% else %}
+                                                No assets found. Start by adding your first asset.
+                                            {% endif %}
+                                        </p>
+                                        <a href="{% url 'assets:asset-create' %}" class="btn btn-save">
+                                            Add New Asset
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics - Plain style without boxes -->
+        {% if assets %}
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Asset Summary</h6>
+            </div>
+            <div class="section-body">
+                <div class="form-row-4col summary-stats-plain">
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Total Assets</div>
+                        <div class="stat-value">{{ total_assets }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Purchase Value</div>
+                        <div class="stat-value">{{ currency_symbol }}{{ total_purchase_value|floatformat:2|intcomma }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Book Value</div>
+                        <div class="stat-value">{{ currency_symbol }}{{ total_book_value|floatformat:2|intcomma }}</div>
+                    </div>
+                    <div class="stat-item-plain">
+                        <div class="stat-label">Maintenance Cost</div>
+                        <div class="stat-value">{{ currency_symbol }}{{ total_maintenance_cost|floatformat:2|intcomma }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Pagination -->
+        {% if assets.has_other_pages %}
+        <div class="section-container">
+            <div class="section-body">
+                <nav aria-label="Asset pagination" class="pagination-nav">
+                    <ul class="pagination">
+                        {% if assets.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ assets.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in assets.paginator.page_range %}
+                            {% if assets.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > assets.number|add:'-3' and num < assets.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if assets.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ assets.next_page_number }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <div class="pagination-info">
+                    Showing {{ assets.start_index }} to {{ assets.end_index }} of {{ assets.paginator.count }} assets
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle advanced filters chevron
+    const advancedToggle = document.querySelector('[data-bs-target="#advancedFilters"]');
+    const advancedFilters = document.getElementById('advancedFilters');
+    
+    if (advancedToggle && advancedFilters) {
+        advancedFilters.addEventListener('shown.bs.collapse', function () {
+            advancedToggle.querySelector('i').classList.replace('fa-chevron-down', 'fa-chevron-up');
+        });
+        
+        advancedFilters.addEventListener('hidden.bs.collapse', function () {
+            advancedToggle.querySelector('i').classList.replace('fa-chevron-up', 'fa-chevron-down');
+        });
+        
+        // Auto-expand if advanced filters have values
+        const hasAdvancedFilters = '{{ date_from }}' || '{{ date_to }}' || '{{ min_value }}' || '{{ max_value }}';
+        if (hasAdvancedFilters) {
+            advancedFilters.classList.add('show');
+            advancedToggle.querySelector('i').classList.replace('fa-chevron-down', 'fa-chevron-up');
+        }
+    }
+});
+
+// Utility function for going back
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "dashboard:home" %}';
+    }
+}
+</script>
+{% endblock %}

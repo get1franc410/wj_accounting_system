@@ -1,0 +1,392 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\transactions\templates\transactions\category_list.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transaction Categories{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/professional-forms.css' %}" rel="stylesheet">
+<link href="{% static 'assets/css/smart-search.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="page-container" style="padding-left: 2rem;">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>Transaction Categories</h2>
+            <p>Manage transaction categories for your accounting system</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            <a href="{% url 'transactions:category_create' %}" class="btn btn-save">
+                New Category
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters Container - Reduced Height -->
+    <div class="form-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h5>Search & Filter Categories</h5>
+            </div>
+            <div class="section-body search-section-compact">
+                <form method="get" class="filter-form">
+                    <!-- Single Row: Search, Account Type, and Actions -->
+                    <div class="search-form-compact">
+                        <div class="search-input-group">
+                            <label class="form-label-compact">Search Categories</label>
+                            <input type="text" 
+                                   class="form-control form-control-compact" 
+                                   id="search" 
+                                   name="search" 
+                                   value="{{ request.GET.search }}" 
+                                   placeholder="Search by name, description, or account type...">
+                        </div>
+                        <div class="search-input-group">
+                            <label class="form-label-compact">Account Type</label>
+                            <select class="form-select form-control-compact" id="account_type" name="account_type">
+                                <option value="">All Types</option>
+                                <option value="ASSET" {% if request.GET.account_type == 'ASSET' %}selected{% endif %}>Asset</option>
+                                <option value="LIABILITY" {% if request.GET.account_type == 'LIABILITY' %}selected{% endif %}>Liability</option>
+                                <option value="EQUITY" {% if request.GET.account_type == 'EQUITY' %}selected{% endif %}>Equity</option>
+                                <option value="REVENUE" {% if request.GET.account_type == 'REVENUE' %}selected{% endif %}>Revenue</option>
+                                <option value="EXPENSE" {% if request.GET.account_type == 'EXPENSE' %}selected{% endif %}>Expense</option>
+                            </select>
+                        </div>
+                        <div class="search-actions-inline">
+                            <button type="submit" class="btn btn-save btn-compact">
+                                Search
+                            </button>
+                            <a href="{% url 'transactions:category_list' %}" class="btn btn-cancel btn-compact">
+                                Clear
+                            </a>
+                        </div>
+                    </div>
+                    
+                    {% if request.GET.search or request.GET.account_type %}
+                        <div class="filter-indicator-inline">
+                            <span class="filter-indicator">
+                                Filtered Results
+                            </span>
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories List Container -->
+    <div class="list-container">
+        <div class="table-section">
+            <div class="table-responsive">
+                <table class="table-professional">
+                    <thead>
+                        <tr>
+                            <th>Category Details</th>
+                            <th>Account Configuration</th>
+                            <th>Transaction Types</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>
+                                <div class="asset-info">
+                                    <div class="asset-link">{{ category.name }}</div>
+                                    {% if category.description %}
+                                        <div class="asset-desc">{{ category.description|truncatechars:60 }}</div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="account-badge">{{ category.account_type.get_category_display }}</div>
+                                <div class="asset-tag">{{ category.account_type.name }}</div>
+                                {% if category.default_account %}
+                                    <div class="asset-tag mt-1">
+                                        Default: {{ category.default_account.account_number }} - {{ category.default_account.name|truncatechars:25 }}
+                                    </div>
+                                {% else %}
+                                    <div class="no-account">No default account</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% for transaction_type in category.get_compatible_transaction_types %}
+                                    <span class="maintenance-type maintenance-type-routine">{{ transaction_type }}</span>
+                                {% empty %}
+                                    <span class="no-account">None configured</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if category.is_active %}
+                                    <span class="status-badge status-active">Active</span>
+                                {% else %}
+                                    <span class="status-badge status-disposed">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons-boxed">
+                                    <a href="{% url 'transactions:category_detail' pk=category.pk %}" 
+                                       class="action-btn action-btn-view">
+                                        View
+                                    </a>
+                                    <a href="{% url 'transactions:category_update' pk=category.pk %}" 
+                                       class="action-btn action-btn-delete">
+                                        Edit
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <div class="empty-content">
+                                        <div class="empty-message">
+                                            {% if request.GET.search or request.GET.account_type %}
+                                                No categories match your search criteria.
+                                            {% else %}
+                                                No transaction categories found.
+                                            {% endif %}
+                                        </div>
+                                        <div class="mt-3">
+                                            {% if request.GET.search or request.GET.account_type %}
+                                                <a href="{% url 'transactions:category_list' %}" class="btn btn-cancel">
+                                                    Clear Search
+                                                </a>
+                                            {% endif %}
+                                            <a href="{% url 'transactions:category_create' %}" class="btn btn-save">
+                                                Create First Category
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Help Text Section -->
+        <div class="help-text-section">
+            <div class="help-content">
+                <p><strong>Quick Guide:</strong> Transaction categories help organize your accounting entries. Each category links to an account type and defines which transaction types are allowed. Use categories to streamline data entry and maintain consistent accounting practices.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Compact Search Form Styling */
+.search-section-compact {
+    padding: 1rem 1.5rem;
+}
+
+.search-form-compact {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+}
+
+.search-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label-compact {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 4px;
+}
+
+.form-control-compact {
+    height: 32px;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.search-actions-inline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-compact {
+    padding: 6px 12px;
+    font-size: 12px;
+    height: 32px;
+}
+
+.filter-indicator-inline {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+}
+
+/* Action Buttons - Matching Image Style */
+.action-buttons-boxed {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    min-width: 80px;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+    line-height: 1.2;
+}
+
+.action-btn-view {
+    background-color: #6c757d;
+    color: white;
+}
+
+.action-btn-view:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+
+.action-btn-delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-btn-delete:hover {
+    background-color: #c82333;
+    color: white;
+    text-decoration: none;
+}
+
+/* Help Text Section */
+.help-text-section {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.help-content {
+    font-size: 13px;
+    color: #6c757d;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.help-content p {
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-container {
+        padding-left: 1rem !important;
+    }
+    
+    .search-form-compact {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .search-actions-inline {
+        justify-content: flex-start;
+    }
+    
+    .action-buttons-boxed {
+        flex-direction: row;
+        justify-content: center;
+        gap: 4px;
+    }
+    
+    .action-btn {
+        min-width: 50px;
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .help-text-section {
+        padding: 0.5rem 1rem;
+    }
+    
+    .help-content {
+        font-size: 12px;
+    }
+}
+
+/* Additional spacing for left border */
+.page-container {
+    border-left: 3px solid transparent;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dropdown filters
+    const accountTypeSelect = document.getElementById('account_type');
+    if (accountTypeSelect) {
+        const dropdown = accountTypeSelect.closest('.search-input-group');
+        if (dropdown) {
+            dropdown.classList.add('dropdown');
+            dropdown.setAttribute('data-filter', 'true');
+        }
+    }
+    
+    // Apply dropdown filters
+    $('.dropdown[data-filter="true"]').dropdownFilter({
+        filterPlaceholder: 'Search account types...',
+        maxHeight: '200px'
+    });
+    
+    // Auto-submit search form with debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 500);
+        });
+    }
+    
+    if (accountTypeSelect) {
+        accountTypeSelect.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+});
+
+// Back button function
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/transactions/';
+    }
+}
+</script>
+{% endblock %}

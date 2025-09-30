@@ -1,0 +1,492 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\inventory\templates\inventory\inventory_item_detail.html -->
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ item.name }} - Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">{{ item.name }}</h2>
+            <p class="text-muted mb-0">Inventory item details and management</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">
+            ← Back
+        </button>
+    </div>
+
+    <!-- Main Content Container with Shadow -->
+    <div class="content-container">
+        
+        <!-- Basic Information Section -->
+        <div class="content-section mb-4">
+            <div class="section-header">
+                <h5 class="mb-0">Item Information</h5>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-minimal">
+                            <tr>
+                                <td class="label-col"><strong>SKU:</strong></td>
+                                <td>{{ item.sku|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col"><strong>Item Type:</strong></td>
+                                <td><span class="badge badge-minimal">{{ item.get_item_type_display }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="label-col"><strong>Unit:</strong></td>
+                                <td>{{ item.get_unit_of_measurement_display }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col"><strong>Description:</strong></td>
+                                <td>{{ item.description|default:"N/A" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-minimal">
+                            <tr>
+                                <td class="label-col"><strong>Quantity on Hand:</strong></td>
+                                <td>
+                                    <span class="badge badge-quantity">{{ item.quantity_on_hand|floatformat:0 }}</span>
+                                    {% if item.is_low_on_stock %}
+                                        <span class="badge badge-warning ms-2">Low Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-col"><strong>Average Cost:</strong></td>
+                                <td>{{ request.user.company.currency_symbol }}{{ item.current_average_cost|floatformat:2|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col"><strong>Sale Price:</strong></td>
+                                <td>{{ request.user.company.currency_symbol }}{{ item.sale_price|floatformat:2|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col"><strong>Reorder Level:</strong></td>
+                                <td>{{ item.reorder_level|floatformat:0 }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Features Display -->
+                {% if item.enable_batch_tracking or item.track_expiry or not item.allow_fractional_quantities %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="feature-title">Item Features:</h6>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if item.enable_batch_tracking %}
+                                <span class="badge badge-feature">Batch Tracking</span>
+                            {% endif %}
+                            {% if item.track_expiry %}
+                                <span class="badge badge-feature">Expiry Tracking</span>
+                            {% endif %}
+                            {% if not item.allow_fractional_quantities %}
+                                <span class="badge badge-feature">Whole Numbers Only</span>
+                            {% endif %}
+                            <span class="badge badge-feature">{{ item.get_costing_method_display }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Batch Information Section - FIXED: Show when batch tracking is enabled -->
+        {% if item.enable_batch_tracking %}
+        <div class="content-section mb-4">
+            <div class="section-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Active Batches</h5>
+                    <a href="{% url 'inventory:batch_list' item.pk %}" class="btn btn-secondary-outline">
+                        View All Batches
+                    </a>
+                </div>
+            </div>
+            <div class="section-body">
+                {% if batches %}
+                <div class="table-responsive">
+                    <table class="table table-minimal">
+                        <thead>
+                            <tr>
+                                <th>Batch Number</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost</th>
+                                <th>Expiry Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for batch in batches %}
+                            <tr>
+                                <td>{{ batch.batch_number }}</td>
+                                <td>{{ batch.quantity_remaining|floatformat:0 }}</td>
+                                <td>{{ request.user.company.currency_symbol }}{{ batch.unit_cost|floatformat:2 }}</td>
+                                <td>
+                                    {% if batch.expiry_date %}
+                                        {{ batch.expiry_date|date:"M d, Y" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if batch.is_expired %}
+                                        <span class="badge badge-danger">Expired</span>
+                                    {% elif batch.is_expiring_soon %}
+                                        <span class="badge badge-warning">Expiring Soon</span>
+                                    {% else %}
+                                        <span class="badge badge-success">Active</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state text-center py-4">
+                    <p class="text-muted">No batches created for this item yet.</p>
+                    <a href="{% url 'inventory:batch_create' item.pk %}" class="btn btn-action">
+                        Create First Batch
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions Section - ENHANCED with proper links -->
+        {% if user.user_type == 'ADMIN' or user.user_type == 'ACCOUNTANT' or user.user_type == 'STOCK_KEEPER' %}
+        <div class="content-section mb-4">
+            <div class="section-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="section-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="action-card">
+                            <a href="{% url 'inventory:transaction_create' %}?item={{ item.pk }}" class="btn btn-action w-100">
+                                Stock Transaction
+                            </a>
+                            <small class="text-muted d-block mt-2">Purchase, Sale, Return</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="action-card">
+                            <a href="{% url 'inventory:movement_create' %}?item={{ item.pk }}" class="btn btn-action w-100">
+                                Quick Adjustment
+                            </a>
+                            <small class="text-muted d-block mt-2">Damage, Loss, Correction</small>
+                        </div>
+                    </div>
+                    
+                    <!-- FIXED: Price Adjustment Link - Show for appropriate costing method -->
+                    {% if item.costing_method == 'PRICE_ADJ' and user.user_type in 'ADMIN,ACCOUNTANT' %}
+                    <div class="col-md-3">
+                        <div class="action-card">
+                            <a href="{% url 'inventory:price_adjustment_create' item.pk %}" class="btn btn-action w-100">
+                                Price Adjustment
+                            </a>
+                            <small class="text-muted d-block mt-2">Adjust inventory value</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- FIXED: Batch Management Links -->
+                    {% if item.enable_batch_tracking %}
+                    <div class="col-md-3">
+                        <div class="action-card">
+                            <a href="{% url 'inventory:batch_create' item.pk %}" class="btn btn-action w-100">
+                                New Batch
+                            </a>
+                            <small class="text-muted d-block mt-2">Create batch/lot</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-3">
+                        <div class="action-card">
+                            <a href="{% url 'inventory:item_update' item.pk %}" class="btn btn-action w-100">
+                                Edit Item
+                            </a>
+                            <small class="text-muted d-block mt-2">Update details</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Transaction History Section -->
+        <div class="content-section">
+            <div class="section-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Transaction History</h5>
+                    <a href="{% url 'inventory:movement_list' %}?item={{ item.pk }}" class="btn btn-secondary-outline">
+                        View All Movements
+                    </a>
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="table table-minimal">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Transaction Type</th>
+                                <th>Batch</th>
+                                <th class="text-end">Quantity Change</th>
+                                <th class="text-end">Unit Cost</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                            <tr>
+                                <td>{{ tx.transaction_date|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if tx.get_quantity_change > 0 %}badge-success{% else %}badge-danger{% endif %}">
+                                        {{ tx.get_transaction_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if tx.batch %}
+                                        {{ tx.batch.batch_number }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-end {% if tx.get_quantity_change < 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {% if tx.get_quantity_change > 0 %}+{% endif %}{{ tx.get_quantity_change|floatformat:0 }}
+                                </td>
+                                <td class="text-end">
+                                    {% if tx.unit_cost %}
+                                        {{ request.user.company.currency_symbol }}{{ tx.unit_cost|floatformat:2 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ tx.notes|default:""|truncatechars:50 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <p class="text-muted mt-2">No transactions recorded for this item yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/inventory/';
+    }
+}
+</script>
+
+<!-- Same consistent styling as before -->
+<style>
+/* Main container with shadow - same as transaction form */
+.content-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+/* Content sections - same as form sections */
+.content-section {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.content-section:last-child {
+    border-bottom: none;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+/* Buttons - same color scheme as transaction form */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-action {
+    background: #343a40;
+    color: white;
+    padding: 12px;
+}
+
+.btn-action:hover {
+    background: #23272b;
+    color: white;
+}
+
+.btn-secondary-outline {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-secondary-outline:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+/* Table styling - consistent with transaction form */
+.table-minimal {
+    font-size: 14px;
+    border-collapse: collapse;
+}
+
+.table-minimal th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-minimal td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+.label-col {
+    width: 140px;
+    background: #f8f9fa;
+}
+
+/* Badges - minimal grey styling */
+.badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-minimal {
+    background: #6c757d;
+    color: white;
+}
+
+.badge-quantity {
+    background: #343a40;
+    color: white;
+    font-size: 14px;
+    padding: 6px 12px;
+}
+
+.badge-feature {
+    background: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: white;
+}
+
+/* Action cards */
+.action-card {
+    text-align: center;
+}
+
+.action-card small {
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+/* Feature title */
+.feature-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 2rem 0;
+}
+
+/* Remove all border radius */
+.btn, .content-container, .section-header, .badge, .table {
+    border-radius: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .content-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .action-card {
+        margin-bottom: 1rem;
+    }
+    
+    .btn-action {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

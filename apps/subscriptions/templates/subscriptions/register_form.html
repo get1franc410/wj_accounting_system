@@ -1,0 +1,38 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\subscriptions\templates\subscriptions\register_form.html -->
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <!-- STYLE: Header is now plain to match the app's aesthetic -->
+                <div class="card-header">
+                    <h4 class="mb-0">New Company Registration</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading">Selected Plan: {{ plan.name }}</h5>
+                        <p class="mb-0">You are registering for the <strong>{{ plan.name }}</strong> plan. Please fill out the details below and upload your proof of payment to complete the process.</p>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-grid gap-2 mt-4">
+                            <!-- STYLE: Changed to btn-dark for consistency -->
+                            <button type="submit" class="btn btn-dark btn-lg">Submit Registration</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center">
+                    <small>Changed your mind? <a href="{% url 'subscriptions:register' %}">Go back to plans</a>. | Already have an account? <a href="{% url 'auth:login' %}">Log In</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

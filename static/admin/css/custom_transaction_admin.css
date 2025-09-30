@@ -1,0 +1,48 @@
+/* C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\static\admin\css\custom_transaction_admin.css */
+
+.colored-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.875em;
+    text-align: center;
+    min-width: 80px;
+}
+
+.status-paid {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-unpaid {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-partial {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-na {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+/* Enhanced table styling */
+.admin-transaction-table .field-colored_payment_status {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.admin-transaction-table .field-total_amount,
+.admin-transaction-table .field-amount_paid {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}

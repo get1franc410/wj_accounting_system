@@ -1,0 +1,54 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\assets\templates\assets\asset_confirm_delete.html -->
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Delete Asset</h2>
+            <p>Confirm deletion of "{{ asset.name }}"</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">← Back</button>
+    </div>
+
+    <!-- Confirmation Container -->
+    <div class="form-container">
+        <div class="section-header" style="background: #f8d7da; border-color: #f5c6cb;">
+            <h5 style="color: #721c24;">⚠️ Confirm Deletion</h5>
+        </div>
+        <div class="section-body">
+            <div class="alert alert-danger" style="border-radius: 0;">
+                <h6 class="alert-heading">Warning!</h6>
+                <p>This action cannot be undone. Deleting this asset will remove it from your records. Associated maintenance history will also be deleted.</p>
+                <hr>
+                <p class="mb-0">Please ensure this is the correct asset before proceeding.</p>
+            </div>
+
+            <div class="mb-4">
+                <p class="lead">Are you sure you want to permanently delete the asset: <strong>"{{ asset.name }}"</strong>?</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="goBack()">Cancel</button>
+                    <button type="submit" class="btn btn-delete">Confirm Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "assets:asset-detail" asset.pk %}';
+    }
+}
+</script>
+{% endblock %}

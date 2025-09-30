@@ -1,0 +1,72 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\customers\templates\customers\customer_confirm_delete.html -->
+{% extends "base.html" %}
+
+{% block title %}Confirm Deletion{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h2>Confirm Deletion</h2>
+                    <p>This action cannot be undone</p>
+                </div>
+                <button type="button" class="btn btn-back" onclick="goBack()">← Back</button>
+            </div>
+
+            <!-- Confirmation Container -->
+            <div class="form-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h5>Delete Customer/Vendor</h5>
+                    </div>
+                    <div class="section-body">
+                        <div class="alert alert-danger">
+                            <strong>Warning:</strong> You are about to permanently delete the following customer/vendor:
+                        </div>
+                        
+                        <div class="text-center mb-4">
+                            <h4 class="text-professional">{{ customer.name }}</h4>
+                            <p class="text-muted-professional">
+                                Type: {{ customer.get_entity_type_display }}
+                            </p>
+                            {% if customer.email %}
+                                <p class="text-muted-professional">Email: {{ customer.email }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <strong>This will:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Remove the customer and their associated ledger accounts</li>
+                                <li>Delete all transaction history</li>
+                                <li>Remove any outstanding balances</li>
+                            </ul>
+                        </div>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-cancel" onclick="goBack()">Cancel</button>
+                                <button type="submit" class="btn btn-delete">Yes, Delete Permanently</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "customers:customer-list" %}';
+    }
+}
+</script>
+{% endblock %}

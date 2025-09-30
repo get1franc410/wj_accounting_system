@@ -1,0 +1,442 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\inventory\templates\inventory\inventory_movement_list.html -->
+{% extends 'base.html' %}
+{% load humanize %}
+{% load inventory_extras %}
+
+{% block title %}Inventory Movements{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Inventory Movements</h2>
+            <p class="text-muted mb-0">Track and manage inventory adjustments</p>
+        </div>
+        <div class="d-flex gap-2">
+            <!-- Export buttons -->
+            {% include 'components/export_buttons.html' with export_url='inventory:export-movements' %}
+            <a href="{% url 'inventory:movement_create' %}" class="btn btn-primary">
+                New Movement
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Container with Shadow -->
+    <div class="content-container">
+        
+        <!-- Search and Filter Section -->
+        <div class="content-section">
+            <div class="section-header">
+                <h5 class="mb-0">Search & Filter</h5>
+            </div>
+            <div class="section-body">
+                <form method="get" class="row g-3">
+                    <!-- First row: main filters -->
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search_query }}" placeholder="Item name, reference...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="item" class="form-label">Item</label>
+                        <select class="form-select" id="item" name="item" data-filter="true" data-placeholder="Search items...">
+                            <option value="">All Items</option>
+                            {% for item in items %}
+                                <option value="{{ item.id }}" {% if item_filter == item.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ item.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Status</option>
+                            <option value="processed" {% if status_filter == 'processed' %}selected{% endif %}>Processed</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-action flex-fill">
+                                Search
+                            </button>
+                            <a href="{% url 'inventory:movement_list' %}" class="btn btn-secondary-outline flex-fill">
+                                Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        {% if total_movements > 0 %}
+        <div class="content-section">
+            <div class="section-header">
+                <h5 class="mb-0">Summary Statistics</h5>
+            </div>
+            <div class="section-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h6 class="text-muted mb-1">Total Movements</h6>
+                            <span class="stat-number">{{ total_movements }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h6 class="text-muted mb-1">Processed</h6>
+                            <span class="stat-number text-success">{{ processed_count }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h6 class="text-muted mb-1">Pending</h6>
+                            <span class="stat-number text-warning">{{ pending_count }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Movements Table Section -->
+        <div class="content-section">
+            <div class="section-header">
+                <h5 class="mb-0">Movement Records</h5>
+            </div>
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-minimal">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Item</th>
+                                <th>Movement Type</th>
+                                <th>Reason</th>
+                                <th class="text-end">Quantity</th>
+                                <th class="text-end">Value</th>
+                                <th>Created By</th>
+                                <th class="text-center">Status</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movement in movements %}
+                            <tr>
+                                <td>{{ movement.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <a href="{{ movement.item.get_absolute_url }}" class="item-link">
+                                        {{ movement.item.name }}
+                                    </a>
+                                    {% if movement.batch %}
+                                        <br><small class="text-muted">Batch: {{ movement.batch.batch_number }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {% if movement.movement_type == 'IN' %}badge-success{% else %}badge-danger{% endif %}">
+                                        {{ movement.get_movement_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ movement.get_reason_display }}
+                                    {% if movement.custom_reason %}
+                                        <br><small class="text-muted">{{ movement.custom_reason }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">{{ movement.quantity|floatformat:0 }}</td>
+                                <td class="text-end">
+                                    {% if movement.fair_market_value %}
+                                        {{ request.user.company.currency_symbol }}{{ movement.fair_market_value|mul:movement.quantity|floatformat:2|intcomma }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ movement.created_by.get_full_name|default:movement.created_by.username }}</td>
+                                <td class="text-center">
+                                    {% if movement.is_processed %}
+                                        <span class="badge badge-success">Processed</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ movement.reference_document|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <p class="text-muted mt-2">
+                                            {% if search_query or item_filter or status_filter %}
+                                                No inventory movements found matching your criteria.
+                                            {% else %}
+                                                No inventory movements found. Create your first movement to get started.
+                                            {% endif %}
+                                        </p>
+                                        <a href="{% url 'inventory:movement_create' %}" class="btn btn-primary">
+                                            Create First Movement
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if movements.has_other_pages %}
+        <div class="content-section">
+            <div class="section-body">
+                <nav aria-label="Movement pagination">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if movements.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ movements.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">{{ movements.number }}</span>
+                        </li>
+                        
+                        {% if movements.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ movements.next_page_number }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <div class="text-center text-muted mt-2">
+                    Showing {{ movements.start_index }} to {{ movements.end_index }} of {{ movements.paginator.count }} movements
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Consistent Styling -->
+<style>
+/* Main container with shadow */
+.content-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+/* Content sections */
+.content-section {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.content-section:last-child {
+    border-bottom: none;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+/* Buttons */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #343a40;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #23272b;
+    color: white;
+}
+
+.btn-action {
+    background: #343a40;
+    color: white;
+}
+
+.btn-action:hover {
+    background: #23272b;
+    color: white;
+}
+
+.btn-secondary-outline {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-secondary-outline:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+/* Form controls */
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+}
+
+/* Table styling */
+.table-minimal {
+    font-size: 14px;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.table-minimal th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-minimal td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+.table-minimal tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* Item links */
+.item-link {
+    color: #495057;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.item-link:hover {
+    color: #343a40;
+    text-decoration: underline;
+}
+
+/* Badges */
+.badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+/* Statistics cards */
+.stat-card {
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #343a40;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 2rem 0;
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: #495057;
+    border: 1px solid #dee2e6;
+    padding: 8px 12px;
+}
+
+.pagination .page-item.active .page-link {
+    background: #343a40;
+    border-color: #343a40;
+    color: white;
+}
+
+.pagination .page-link:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    color: #343a40;
+}
+
+/* Remove all border radius */
+.btn, .form-control, .form-select, .content-container, .section-header, .badge, .stat-card, .page-link {
+    border-radius: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .content-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 8px !important;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .table-responsive {
+        font-size: 12px;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

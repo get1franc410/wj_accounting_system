@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Settings Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Settings Dashboard</h2>
+            <p>Configure your system preferences and company settings</p>
+        </div>
+    </div>
+
+    <!-- Settings Grid -->
+    <div class="settings-grid">
+        <!-- ADMIN ONLY SETTINGS -->
+        {% if user.user_type == 'ADMIN' %}
+        <div class="settings-card admin-card">
+            <div class="settings-card-header">
+                <h6>Admin Controls</h6>
+                <span class="settings-badge admin-badge">Admin Only</span>
+            </div>
+            <div class="settings-card-body">
+                <p>Complete system administration and configuration</p>
+                <div class="settings-actions">
+                    <a href="{% url 'core:admin_settings' %}" class="btn btn-save">
+                        Admin Control Panel
+                    </a>
+                    <a href="{% url 'core:user_management' %}" class="btn btn-cancel">
+                        User Management
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- BACKUP & EMAIL SETTINGS (Admin + Accountant) -->
+        {% if user.user_type in 'ADMIN,ACCOUNTANT' %}
+        <div class="settings-card backup-card">
+            <div class="settings-card-header">
+                <h6>Backup & Email</h6>
+                <span class="settings-badge backup-badge">System</span>
+            </div>
+            <div class="settings-card-body">
+                <p>Configure automated backups and email notifications</p>
+                <div class="settings-actions">
+                    <a href="{% url 'backup:settings' %}" class="btn btn-save">
+                        Backup Settings
+                    </a>
+                    <a href="{% url 'backup:history' %}" class="btn btn-cancel">
+                        Backup History
+                    </a>
+                </div>
+                
+                <!-- Quick Status Indicators -->
+                <div class="status-indicators">
+                    <div class="status-row">
+                        <span class="status-label">Email:</span>
+                        {% if email_config and email_config.is_active %}
+                            <span class="status-indicator status-success">Active</span>
+                        {% else %}
+                            <span class="status-indicator status-error">Not Configured</span>
+                        {% endif %}
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Backup:</span>
+                        {% if backup_settings and backup_settings.backup_enabled %}
+                            <span class="status-indicator status-success">Enabled</span>
+                        {% else %}
+                            <span class="status-indicator status-warning">Disabled</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PERSONAL SETTINGS (All Users) -->
+        <div class="settings-card personal-card">
+            <div class="settings-card-header">
+                <h6>Personal Settings</h6>
+                <span class="settings-badge personal-badge">Personal</span>
+            </div>
+            <div class="settings-card-body">
+                <p>Manage your personal account preferences</p>
+                <div class="settings-actions">
+                    <a href="{% url 'auth:change_password' %}" class="btn btn-save">
+                        Change Password
+                    </a>
+                    <a href="{% url 'core:user_profile' %}" class="btn btn-cancel">
+                        Profile Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUBSCRIPTION MANAGEMENT (All Users) -->
+        <div class="settings-card license-card">
+            <div class="settings-card-header">
+                <h6>Subscription</h6>
+                <span class="settings-badge license-badge">Plan</span>
+            </div>
+            <div class="settings-card-body">
+                {% if user_license %}
+                    <p>Manage your software subscription and view plan details</p>
+                    <div class="settings-actions">
+                        <a href="{% url 'subscriptions:status' %}" class="btn btn-save">
+                            View Subscription Details
+                        </a>
+                    </div>
+                    
+                    <!-- Quick Status Indicators -->
+                    <div class="status-indicators">
+                        <div class="status-row">
+                            <span class="status-label">Status:</span>
+                            {% if license_valid %}
+                                <span class="status-indicator status-success">Active</span>
+                            {% else %}
+                                <span class="status-indicator status-error">Inactive/Expired</span>
+                            {% endif %}
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Plan:</span>
+                            <span class="status-indicator status-info">{{ user_license.plan_name }}</span>
+                        </div>
+                        {% if license_days_remaining is not None and license_days_remaining <= 30 %}
+                        <div class="status-row">
+                            <span class="status-label">Expires:</span>
+                            <span class="status-indicator status-warning">{{ license_days_remaining }} days</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p>No subscription found. Please check your status to resolve this.</p>
+                    <div class="settings-actions">
+                        <a href="{% url 'subscriptions:status' %}" class="btn btn-save">
+                            <i class="bi bi-info-circle"></i> Check Status
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- COMPANY SETTINGS (Admin + Manager) -->
+        {% if user.user_type in 'ADMIN,MANAGER' %}
+        <div class="settings-card company-card">
+            <div class="settings-card-header">
+                <h6>Company Settings</h6>
+                <span class="settings-badge company-badge">Company</span>
+            </div>
+            <div class="settings-card-body">
+                <p>Configure company information and preferences</p>
+                <div class="settings-actions">
+                    <button class="btn btn-save" data-bs-toggle="modal" data-bs-target="#companySettingsModal">
+                        Company Info
+                    </button>
+                    <button class="btn btn-cancel" data-bs-toggle="modal" data-bs-target="#currencySettingsModal">
+                        Currency Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- SYSTEM STATUS (All Users - Read Only) -->
+        <div class="settings-card status-card">
+            <div class="settings-card-header">
+                <h6>System Status</h6>
+                <span class="settings-badge status-badge">Info</span>
+            </div>
+            <div class="settings-card-body">
+                <div class="system-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ system_stats.total_users }}</div>
+                        <div class="stat-label">Users</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ system_stats.total_transactions }}</div>
+                        <div class="stat-label">Transactions</div>
+                    </div>
+                </div>
+                <div class="system-info">
+                    <div class="info-row">
+                        <span class="info-label">Last Backup:</span>
+                        <span class="info-value">
+                            {% if system_stats.last_backup %}
+                                {{ system_stats.last_backup|timesince }} ago
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Company Settings Modal -->
+<div class="modal fade" id="companySettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Company Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="company_settings">
+                <div class="modal-body">
+                    {{ company_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Currency Settings Modal -->
+<div class="modal fade" id="currencySettingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Currency Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="currency_settings">
+                <div class="modal-body">
+                    {{ currency_form|crispy }}
+                    <div class="alert alert-warning">
+                        <strong>Warning:</strong> Changing currency affects all financial displays.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save">Update Currency</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Dashboard Styles -->
+<style>
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.settings-card { background: white; border-radius: 8px; border: 1px solid #e9ecef; overflow: hidden; transition: all 0.2s ease; }
+.settings-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+.settings-card-header { padding: 1.25rem; background: #f8f9fa; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
+.settings-card-header h6 { margin: 0; font-size: 1.1rem; font-weight: 600; color: #2c3e50; }
+.settings-badge { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.admin-badge { background: #dc3545; color: white; }
+.backup-badge { background: #17a2b8; color: white; }
+.personal-badge { background: #6c757d; color: white; }
+.company-badge { background: #28a745; color: white; }
+.status-badge { background: #343a40; color: white; }
+.license-badge { background: #6f42c1; color: white; }
+.settings-card-body { padding: 1.25rem; }
+.settings-card-body p { color: #6c757d; margin-bottom: 1rem; font-size: 0.9rem; }
+.settings-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+.status-indicators { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e9ecef; }
+.status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.status-label { font-size: 0.875rem; color: #6c757d; font-weight: 500; }
+.system-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.stat-item { text-align: center; }
+.stat-value { font-size: 1.75rem; font-weight: 700; color: #2c3e50; }
+.stat-label { font-size: 0.875rem; color: #6c757d; margin-top: 0.25rem; }
+.system-info { padding-top: 1rem; border-top: 1px solid #e9ecef; }
+.info-row { display: flex; justify-content: space-between; align-items: center; }
+.info-label { font-size: 0.875rem; color: #6c757d; font-weight: 500; }
+.info-value { font-size: 0.875rem; color: #2c3e50; }
+.status-indicator { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
+.status-success { background: #d4edda; color: #155724; }
+.status-warning { background: #fff3cd; color: #856404; }
+.status-error { background: #f8d7da; color: #721c24; }
+.status-info { background: #d1ecf1; color: #0c5460; }
+.modal-content { border-radius: 8px; }
+.modal-header { padding: 1.5rem; }
+.modal-body { padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; }
+</style>
+{% endblock %}

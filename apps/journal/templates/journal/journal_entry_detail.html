@@ -1,0 +1,400 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\journal\templates\journal\journal_entry_detail.html -->
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Journal Entry #{{ journal_entry.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Journal Entry #{{ journal_entry.id }}</h2>
+            <p class="text-muted mb-0">View journal entry details and line items</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">
+            ← Back
+        </button>
+    </div>
+
+    <!-- Main Container with Shadow -->
+    <div class="form-container">
+        <!-- Entry Information Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Entry Information</h5>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Entry Date</label>
+                        <div class="info-display">{{ journal_entry.date|date:"F d, Y" }}</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Entry ID</label>
+                        <div class="info-display">
+                            <span class="entry-badge">JE-{{ journal_entry.id }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Created By</label>
+                        <div class="info-display">{{ journal_entry.created_by.get_full_name|default:"System" }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Description</label>
+                        <div class="info-display">{{ journal_entry.description }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entry Lines Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Journal Entry Lines</h5>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="table table-minimal">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%">Account</th>
+                                <th style="width: 30%">Description</th>
+                                <th style="width: 15%" class="text-end">Debit</th>
+                                <th style="width: 15%" class="text-end">Credit</th>
+                                <th style="width: 5%" class="text-center">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in journal_entry.lines.all %}
+                            <tr>
+                                <td>
+                                    <div class="account-info">
+                                        <div class="account-name">{{ line.account.name }}</div>
+                                        <small class="account-number">{{ line.account.account_number }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="line-description">
+                                        {{ line.description|default:"-" }}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    {% if line.debit > 0 %}
+                                        <span class="amount-display debit">
+                                            {{ request.user.company.currency_symbol }}{{ line.debit|floatformat:2|intcomma }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if line.credit > 0 %}
+                                        <span class="amount-display credit">
+                                            {{ request.user.company.currency_symbol }}{{ line.credit|floatformat:2|intcomma }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if line.debit > 0 %}
+                                        <span class="balance-indicator debit">DR</span>
+                                    {% else %}
+                                        <span class="balance-indicator credit">CR</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="totals-row">
+                                <td colspan="2" class="text-end"><strong>Totals</strong></td>
+                                <td class="text-end">
+                                    <strong class="total-amount">
+                                        {{ request.user.company.currency_symbol }}{{ total_debits|floatformat:2|intcomma }}
+                                    </strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong class="total-amount">
+                                        {{ request.user.company.currency_symbol }}{{ total_credits|floatformat:2|intcomma }}
+                                    </strong>
+                                </td>
+                                <td class="text-center">
+                                    {% if total_debits == total_credits %}
+                                        <span class="balance-status balanced">✓</span>
+                                    {% else %}
+                                        <span class="balance-status unbalanced">⚠</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Entry Summary</h5>
+            </div>
+            <div class="section-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="summary-item">
+                            <div class="summary-label">Total Lines</div>
+                            <div class="summary-value">{{ journal_entry.lines.count }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-item">
+                            <div class="summary-label">Total Debits</div>
+                            <div class="summary-value">{{ request.user.company.currency_symbol }}{{ total_debits|floatformat:2|intcomma }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-item">
+                            <div class="summary-label">Total Credits</div>
+                            <div class="summary-value">{{ request.user.company.currency_symbol }}{{ total_credits|floatformat:2|intcomma }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-item">
+                            <div class="summary-label">Balance Status</div>
+                            <div class="summary-value">
+                                {% if total_debits == total_credits %}
+                                    <span class="status-balanced">Balanced</span>
+                                {% else %}
+                                    <span class="status-unbalanced">Unbalanced</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Utility function for going back
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/journal/';
+    }
+}
+</script>
+
+<!-- Consistent Styling -->
+<style>
+/* Container with shadow - Same as transaction form */
+.form-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+/* Form sections */
+.form-section {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+/* Buttons - Same color scheme */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+/* Information display */
+.info-display {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.entry-badge {
+    background: #6c757d;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Table styling */
+.table-minimal {
+    font-size: 14px;
+    border-collapse: collapse;
+}
+
+.table-minimal th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-minimal td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+.totals-row {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+/* Account information */
+.account-info .account-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.account-info .account-number {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.line-description {
+    color: #495057;
+}
+
+/* Amount displays */
+.amount-display {
+    font-weight: 600;
+}
+
+.amount-display.debit {
+    color: #dc3545;
+}
+
+.amount-display.credit {
+    color: #28a745;
+}
+
+.total-amount {
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+/* Balance indicators */
+.balance-indicator {
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.balance-indicator.debit {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.balance-indicator.credit {
+    background: #d4edda;
+    color: #155724;
+}
+
+.balance-status.balanced {
+    color: #28a745;
+    font-size: 16px;
+}
+
+.balance-status.unbalanced {
+    color: #dc3545;
+    font-size: 16px;
+}
+
+/* Summary section */
+.summary-item {
+    padding: 1rem;
+    text-align: center;
+}
+
+.summary-label {
+    color: #6c757d;
+    font-size: 14px;
+    margin-bottom: 0.5rem;
+}
+
+.summary-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.status-balanced {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.status-unbalanced {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Remove all border radius */
+.btn, .form-container, .section-header, .info-display, .entry-badge, .balance-indicator {
+    border-radius: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .summary-item {
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

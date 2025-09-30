@@ -1,0 +1,67 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\emails\debtor_reminder_before_due.html -->
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\emails\debtor_reminder_before_due.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>Payment Due Soon - {{ company.name }}</h2>
+
+<p>Hello {{ customer_name }},</p>
+
+<p>This is a friendly reminder that you have an upcoming payment due with <strong>{{ company.name }}</strong>.</p>
+
+<div class="alert alert-info">
+    <h3>Payment Due in {{ days_until_due }} day{{ days_until_due|pluralize }}</h3>
+    <p><strong>Invoice:</strong> {{ current_transaction.reference_number|default:"(No Reference)" }}</p>
+    <p><strong>Due Date:</strong> {{ current_transaction.due_date|date:"F d, Y" }}</p>
+    <p><strong>Amount Due:</strong> {{ currency_symbol }}{{ current_transaction.balance_due|floatformat:2 }}</p>
+</div>
+
+{% if total_balance > current_transaction.balance_due %}
+<div class="alert alert-warning">
+    <p><strong>Total Outstanding Balance:</strong> {{ currency_symbol }}{{ total_balance|floatformat:2 }}</p>
+</div>
+{% endif %}
+
+<p>To avoid any late fees or service interruptions, please ensure your payment is processed before the due date.</p>
+
+<p>If you have already made this payment, please disregard this notice.</p>
+
+<h3>Payment Methods & Contact Information:</h3>
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Company:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.name }}</td>
+    </tr>
+    {% if company.phone %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Phone:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.phone }}</td>
+    </tr>
+    {% endif %}
+    {% if company.email %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Email:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.email }}</td>
+    </tr>
+    {% endif %}
+    {% if company.address %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Address:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.address }}</td>
+    </tr>
+    {% endif %}
+    {% if company.registration_number %}
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Registration No:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.registration_number }}</td>
+    </tr>
+    {% endif %}
+</table>
+
+<p>Thank you for your business!</p>
+
+<p>Best regards,<br>
+<strong>{{ company.name }}</strong><br>
+{% if company.industry %}{{ company.industry }}<br>{% endif %}
+{% if company.email %}{{ company.email }}{% endif %}{% if company.phone and company.email %} | {% endif %}{% if company.phone %}{{ company.phone }}{% endif %}</p>
+{% endblock %}

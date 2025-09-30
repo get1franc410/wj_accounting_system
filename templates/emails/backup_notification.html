@@ -1,0 +1,60 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\emails\backup_notification.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>Database Backup Completed</h2>
+
+<p>Dear Administrator,</p>
+
+<p>The scheduled database backup for <strong>{{ company.name }}</strong> has been completed successfully.</p>
+
+<div class="alert alert-info">
+    <strong>Backup Details:</strong><br>
+    Company: {{ company.name }}<br>
+    Backup Date: {{ backup_date }}<br>
+    Backup File: {{ backup_file|default:"backup.zip" }}<br>
+    File Size: {{ backup_size|default:"Unknown" }}<br>
+    Status: Completed Successfully
+</div>
+
+<h3>Company Information:</h3>
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Company Name:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.name }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Industry:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.industry|default:"Not specified" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Registration Number:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.registration_number|default:"Not provided" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Phone:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.phone|default:"Not provided" }}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;"><strong>Email:</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">{{ company.email|default:"Not provided" }}</td>
+    </tr>
+</table>
+
+<p>The backup file has been generated and is attached to this email. Please store it in a secure location for disaster recovery purposes.</p>
+
+<div class="alert alert-warning">
+    <strong>Important:</strong> Ensure that backup files are stored securely and in multiple locations. Regular testing of backup restoration is recommended.
+</div>
+
+<p>Next scheduled backup: As per your configured schedule</p>
+
+<p>For any questions regarding this backup, please contact:</p>
+<ul>
+    {% if company.phone %}<li><strong>Phone:</strong> {{ company.phone }}</li>{% endif %}
+    {% if company.email %}<li><strong>Email:</strong> {{ company.email }}</li>{% endif %}
+</ul>
+
+<p>Best regards,<br>
+<strong>{{ company.name }} System Administrator</strong></p>
+{% endblock %}

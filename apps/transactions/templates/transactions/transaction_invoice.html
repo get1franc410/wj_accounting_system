@@ -1,0 +1,293 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\transactions\templates\transactions\transaction_invoice.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% with doc_type=transaction.get_transaction_type_display %}
+        <title>{{ doc_type }} #{{ transaction.reference_number|default:transaction.id }}</title>
+    {% endwith %}
+    <style>
+        :root {
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --text-color: #2c3e50;
+            --border-color: #dee2e6;
+            --header-bg: #f8f9fa;
+        }
+
+        body {
+            font-family: var(--font-family);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 40px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .company-details img {
+            max-height: 60px;
+            margin-bottom: 10px;
+        }
+        .company-details h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .company-details p {
+            margin: 2px 0;
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .invoice-title h1 {
+            margin: 0;
+            text-align: right;
+            font-size: 32px;
+            color: #343a40;
+            text-transform: uppercase;
+        }
+        .invoice-title p {
+            margin: 2px 0;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .billing-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .billing-info div {
+            width: 48%;
+        }
+        .billing-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .billing-info p {
+            margin: 2px 0;
+            font-size: 14px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .items-table th {
+            background-color: var(--header-bg);
+            font-weight: 600;
+        }
+        .items-table .text-right { text-align: right; }
+        .items-table .text-center { text-align: center; }
+
+        .summary {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+        .summary-table {
+            width: 50%;
+            font-size: 14px;
+        }
+        .summary-table td {
+            padding: 8px;
+        }
+        .summary-table .label {
+            text-align: right;
+            font-weight: 600;
+        }
+        .summary-table .total {
+            font-weight: bold;
+            font-size: 16px;
+            border-top: 2px solid #343a40;
+        }
+
+        .invoice-footer {
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .invoice-footer p {
+            margin: 5px 0;
+        }
+
+        .print-button-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .print-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .print-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+            }
+            .invoice-container {
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+                padding: 0;
+            }
+            .print-button-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="print-button-container">
+        <button class="print-button" onclick="window.print()">Print or Save as PDF</button>
+    </div>
+
+    <div class="invoice-container">
+        <header class="invoice-header">
+            <div class="company-details">
+                {% if transaction.company.logo %}
+                    <img src="{{ transaction.company.logo.url }}" alt="{{ transaction.company.name }} Logo">
+                {% endif %}
+                <h2>{{ transaction.company.name }}</h2>
+                <p>{{ transaction.company.address }}</p>
+                <p>Email: {{ transaction.company.email }} | Phone: {{ transaction.company.phone }}</p>
+            </div>
+            <div class="invoice-title">
+                <h1>
+                    {% if transaction.transaction_type == 'SALE' %}Invoice
+                    {% elif transaction.transaction_type == 'PURCHASE' %}Bill
+                    {% elif transaction.transaction_type == 'PAYMENT' %}Payment Receipt
+                    {% elif transaction.transaction_type == 'EXPENSE' %}Expense Claim
+                    {% else %}Document
+                    {% endif %}
+                </h1>
+                <p># {{ transaction.reference_number|default:transaction.id }}</p>
+            </div>
+        </header>
+
+        <section class="billing-info">
+            <div class="bill-to">
+                <h3>Bill To</h3>
+                {% if transaction.customer %}
+                    <p><strong>{{ transaction.customer.name }}</strong></p>
+                    <p>{{ transaction.customer.address|default:''|linebreaksbr }}</p>
+                    <p>{{ transaction.customer.email|default:'' }}</p>
+                    <p>{{ transaction.customer.phone|default:'' }}</p>
+                {% else %}
+                    <p>N/A</p>
+                {% endif %}
+            </div>
+            <div class="invoice-meta">
+                <h3>Details</h3>
+                <p><strong>Date:</strong> {{ transaction.date|date:"F d, Y" }}</p>
+                <p><strong>Due Date:</strong> {{ transaction.due_date|date:"F d, Y"|default:"N/A" }}</p>
+                <p><strong>Status:</strong> {{ transaction.payment_status }}</p>
+            </div>
+        </section>
+
+        <section class="items-section">
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if transaction.items.exists %}
+                        {% for item in transaction.items.all %}
+                        <tr>
+                            <td>{{ item.item.name }}</td>
+                            <td>{{ item.description|default:item.item.description }}</td>
+                            <td class="text-center">{{ item.quantity|floatformat:2 }}</td>
+                            <td class="text-right">{{ transaction.company.currency_symbol }}{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="text-right">{{ transaction.company.currency_symbol }}{{ item.line_total|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td>{{ transaction.category.name|default:"General Transaction" }}</td>
+                            <td>{{ transaction.description }}</td>
+                            <td class="text-center">1.00</td>
+                            <td class="text-right">{{ transaction.company.currency_symbol }}{{ transaction.total_amount|floatformat:2 }}</td>
+                            <td class="text-right">{{ transaction.company.currency_symbol }}{{ transaction.total_amount|floatformat:2 }}</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="summary">
+            <table class="summary-table">
+                <tr>
+                    <td class="label">Subtotal:</td>
+                    <td class="text-right">{{ transaction.company.currency_symbol }}{{ transaction.subtotal|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Tax:</td>
+                    <td class="text-right">{{ transaction.company.currency_symbol }}{{ transaction.tax_amount|floatformat:2 }}</td>
+                </tr>
+                <tr class="total">
+                    <td class="label">Total:</td>
+                    <td class="text-right">{{ transaction.company.currency_symbol }}{{ transaction.total_amount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Amount Paid:</td>
+                    <td class="text-right">{{ transaction.company.currency_symbol }}{{ transaction.amount_paid|floatformat:2 }}</td>
+                </tr>
+                <tr class="total">
+                    <td class="label">Balance Due:</td>
+                    <td class="text-right">{{ transaction.company.currency_symbol }}{{ transaction.balance_due|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </section>
+
+        <footer class="invoice-footer">
+            {% if transaction.transaction_type == 'SALE' %}
+                <p>Thank you for your business!</p>
+            {% endif %}
+            <p>{{ transaction.company.name }} | {{ transaction.company.address }}</p>
+        </footer>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\core\dashboard.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Dashboard</h2>
+            <p>A quick overview of your company's financial status</p>
+        </div>
+    </div>
+
+    <!-- Financial Overview -->
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Financial Overview</h6>
+            </div>
+            <div class="section-body">
+                <div class="summary-stats-plain">
+                    <div class="row">
+                        <!-- Cash at Bank -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Cash at Bank</div>
+                                <div class="stat-value">{{ currency_symbol }}{{ cash_at_bank|floatformat:2 }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Accounts Receivable -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Accounts Receivable</div>
+                                <div class="stat-value">{{ currency_symbol }}{{ accounts_receivable|floatformat:2 }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Accounts Payable -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Accounts Payable</div>
+                                <div class="stat-value">{{ currency_symbol }}{{ accounts_payable|floatformat:2 }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Active Customers -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Active Customers</div>
+                                <div class="stat-value">{{ active_customers }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Inventory Items -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Inventory Items</div>
+                                <div class="stat-value">{{ inventory_items }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Net Position (calculated field) -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Net Position</div>
+                                <div class="stat-value">
+                                    {% widthratio cash_at_bank 1 1 as cash_float %}
+                                    {% widthratio accounts_receivable 1 1 as receivable_float %}
+                                    {% widthratio accounts_payable 1 1 as payable_float %}
+                                    {{ currency_symbol }}{% widthratio cash_float|add:receivable_float|add:payable_float|floatformat:"-2" 1 1 %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Quick Actions</h6>
+            </div>
+            <div class="section-body">
+                <div class="row g-3">
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'transactions:transaction_list' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-receipt mb-2"></i>
+                            <br>View Transactions
+                        </a>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'customers:customer_list' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-people mb-2"></i>
+                            <br>Manage Customers
+                        </a>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'inventory:item_list' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-box mb-2"></i>
+                            <br>Inventory Items
+                        </a>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'reports:financial_summary' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-graph-up mb-2"></i>
+                            <br>Financial Reports
+                        </a>
+                    </div>
+
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'transactions:add_transaction' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-plus-circle mb-2"></i>
+                            <br>Add Transaction
+                        </a>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'customers:add_customer' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-person-plus mb-2"></i>
+                            <br>Add Customer
+                        </a>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'inventory:add_item' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-box-seam mb-2"></i>
+                            <br>Add Inventory
+                        </a>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'core:admin_settings' %}" class="btn btn-outline-secondary w-100 dashboard-action">
+                            <i class="bi bi-gear mb-2"></i>
+                            <br>Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity (if you have this data) -->
+    {% if recent_transactions %}
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6>Recent Transactions</h6>
+                    <a href="{% url 'transactions:transaction_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-professional mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in recent_transactions %}
+                            <tr>
+                                <td>
+                                    <div class="date-info">
+                                        <div class="main-date">{{ transaction.transaction_date|date:"M d, Y" }}</div>
+                                        <div class="sub-date">{{ transaction.transaction_date|date:"H:i" }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{% url 'transactions:transaction_detail' transaction.id %}" class="action-link">
+                                        {{ transaction.description|truncatechars:40 }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if transaction.transaction_type == 'INCOME' %}success{% else %}danger{% endif %}">
+                                        {{ transaction.get_transaction_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="amount-value">
+                                        {{ currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- System Alerts (if any) -->
+    {% if system_alerts %}
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>System Alerts</h6>
+            </div>
+            <div class="section-body">
+                {% for alert in system_alerts %}
+                <div class="alert alert-{% if alert.level == 'ERROR' %}danger{% elif alert.level == 'WARNING' %}warning{% else %}info{% endif %} mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>{{ alert.title }}</strong>
+                            <p class="mb-0">{{ alert.message }}</p>
+                        </div>
+                        <small class="text-muted">{{ alert.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Dashboard Action Buttons */
+.dashboard-action {
+    padding: 2rem 1rem;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.dashboard-action:hover {
+    background-color: #495057;
+    border-color: #495057;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 0.25rem 0.5rem rgba(73, 80, 87, 0.25);
+}
+
+.dashboard-action i {
+    font-size: 1.5rem;
+}
+
+/* Financial Stats Hover Effects */
+.stat-item-plain {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 1.5rem 1rem;
+    border-radius: 4px;
+}
+
+.stat-item-plain:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.stat-item-plain:hover .stat-value {
+    color: #495057;
+}
+
+/* Amount styling */
+.amount-value {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-action {
+        min-height: 100px;
+        padding: 1.5rem 1rem;
+    }
+    
+    .dashboard-action i {
+        font-size: 1.25rem;
+    }
+    
+    .stat-item-plain {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 16px;
+    }
+}
+
+/* Alert styling */
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+    background-color: #fff3cd;
+}
+
+.alert-info {
+    border-left-color: #0dcaf0;
+    background-color: #d1ecf1;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click functionality to financial stats
+    document.querySelectorAll('.stat-item-plain').forEach(function(item) {
+        item.addEventListener('click', function() {
+            const label = this.querySelector('.stat-label').textContent.trim();
+            let targetUrl = '';
+            
+            switch(label) {
+                case 'Cash at Bank':
+                    targetUrl = '/accounts/?type=BANK';
+                    break;
+                case 'Accounts Receivable':
+                    targetUrl = '/customers/?filter=receivables';
+                    break;
+                case 'Accounts Payable':
+                    targetUrl = '/suppliers/?filter=payables';
+                    break;
+                case 'Active Customers':
+                    targetUrl = '/customers/';
+                    break;
+                case 'Inventory Items':
+                    targetUrl = '/inventory/';
+                    break;
+                case 'Net Position':
+                    targetUrl = '/reports/financial-summary/';
+                    break;
+                default:
+                    return;
+            }
+            
+            if (targetUrl) {
+                window.location.href = targetUrl;
+            }
+        });
+    });
+
+    // Add loading states to dashboard actions
+    document.querySelectorAll('.dashboard-action').forEach(function(link) {
+        link.addEventListener('click', function() {
+            const originalContent = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span><br>Loading...';
+            
+            // Restore content if navigation fails
+            setTimeout(() => {
+                this.innerHTML = originalContent;
+            }, 3000);
+        });
+    });
+
+    // Auto-refresh dashboard data every 5 minutes
+    setInterval(function() {
+        fetch('/api/dashboard-refresh/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.updated) {
+                    // Update financial figures
+                    updateFinancialFigures(data);
+                }
+            })
+            .catch(error => {
+                console.warn('Dashboard refresh failed:', error);
+            });
+    }, 300000); // 5 minutes
+
+    function updateFinancialFigures(data) {
+        // Update each stat value if the data is available
+        if (data.cash_at_bank !== undefined) {
+            const cashElement = document.querySelector('.stat-item-plain:nth-child(1) .stat-value');
+            if (cashElement) {
+                cashElement.textContent = `{{ currency_symbol }}${data.cash_at_bank.toFixed(2)}`;
+            }
+        }
+        
+        if (data.accounts_receivable !== undefined) {
+            const receivableElement = document.querySelector('.stat-item-plain:nth-child(2) .stat-value');
+            if (receivableElement) {
+                receivableElement.textContent = `{{ currency_symbol }}${data.accounts_receivable.toFixed(2)}`;
+            }
+        }
+        
+        if (data.accounts_payable !== undefined) {
+            const payableElement = document.querySelector('.stat-item-plain:nth-child(3) .stat-value');
+            if (payableElement) {
+                payableElement.textContent = `{{ currency_symbol }}${data.accounts_payable.toFixed(2)}`;
+            }
+        }
+        
+        if (data.active_customers !== undefined) {
+            const customersElement = document.querySelector('.stat-item-plain:nth-child(4) .stat-value');
+            if (customersElement) {
+                customersElement.textContent = data.active_customers;
+            }
+        }
+        
+        if (data.inventory_items !== undefined) {
+            const inventoryElement = document.querySelector('.stat-item-plain:nth-child(5) .stat-value');
+            if (inventoryElement) {
+                inventoryElement.textContent = data.inventory_items;
+            }
+        }
+    }
+
+    // Keyboard shortcuts for quick actions
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey) {
+            switch(e.key) {
+                case 't':
+                    e.preventDefault();
+                    window.location.href = '/transactions/';
+                    break;
+                case 'c':
+                    e.preventDefault();
+                    window.location.href = '/customers/';
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    window.location.href = '/inventory/';
+                    break;
+                case 'r':
+                    e.preventDefault();
+                    window.location.href = '/reports/';
+                    break;
+                case 's':
+                    e.preventDefault();
+                    window.location.href = '/core/admin-settings/';
+                    break;
+            }
+        }
+    });
+
+    // Show keyboard shortcuts hint
+    console.log('Dashboard Shortcuts: Alt+T (Transactions), Alt+C (Customers), Alt+I (Inventory), Alt+R (Reports), Alt+S (Settings)');
+});
+</script>
+
+{% endblock %}

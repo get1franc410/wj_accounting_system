@@ -1,0 +1,478 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\core\templates\core\admin_dashboard.html -->
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>Admin Dashboard</h2>
+            <p>System overview and instant actions for {{ company.name }}</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- System Status Overview -->
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>System Status Overview</h6>
+            </div>
+            <div class="section-body">
+                <div class="summary-stats-plain">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Total Users</div>
+                                <div class="stat-value">{{ system_status.total_users }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Active Customers</div>
+                                <div class="stat-value">{{ system_status.active_customers }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Total Transactions</div>
+                                <div class="stat-value">{{ system_status.total_transactions|intcomma }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Last Backup</div>
+                                <div class="stat-value">
+                                    {% if system_status.last_backup %}
+                                        {{ system_status.last_backup.created_at|timesince }} ago
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instant Actions -->
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Instant Actions</h6>
+                <small class="text-muted">Quick system operations and management tools</small>
+            </div>
+            <div class="section-body">
+                <div class="row g-3">
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <form method="post" action="{% url 'core:instant_backup' %}" class="h-100">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary w-100 h-100 instant-action-btn" 
+                                    onclick="return confirm('Create backup now? This may take a few moments.')"
+                                    style="min-height: 100px;">
+                                <i class="bi bi-cloud-arrow-up mb-2" style="font-size: 1.5rem;"></i>
+                                <br><small>Create Backup</small>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <form method="post" action="{% url 'core:send_instant_reminders' %}" class="h-100">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary w-100 h-100 instant-action-btn" 
+                                    onclick="return confirm('Send payment reminders to all customers with overdue invoices?')"
+                                    style="min-height: 100px;">
+                                <i class="bi bi-envelope-exclamation mb-2" style="font-size: 1.5rem;"></i>
+                                <br><small>Send Reminders</small>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <form method="post" action="{% url 'core:send_audit_reminder' %}" class="h-100">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary w-100 h-100 instant-action-btn" 
+                                    onclick="return confirm('Send audit reminder to all auditors?')"
+                                    style="min-height: 100px;">
+                                <i class="bi bi-clipboard-check mb-2" style="font-size: 1.5rem;"></i>
+                                <br><small>Audit Reminder</small>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <form method="post" action="{% url 'core:test_email_config' %}" class="h-100">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary w-100 h-100 instant-action-btn" 
+                                    onclick="return confirm('Send test email to verify configuration?')"
+                                    style="min-height: 100px;">
+                                <i class="bi bi-envelope-check mb-2" style="font-size: 1.5rem;"></i>
+                                <br><small>Test Email</small>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'core:admin_settings' %}" class="btn btn-outline-secondary w-100 h-100 instant-action-btn d-flex flex-column align-items-center justify-content-center" style="min-height: 100px;">
+                            <i class="bi bi-gear mb-2" style="font-size: 1.5rem;"></i>
+                            <small>Settings</small>
+                        </a>
+                    </div>
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'backup:settings' %}" class="btn btn-outline-secondary w-100 h-100 instant-action-btn d-flex flex-column align-items-center justify-content-center" style="min-height: 100px;">
+                            <i class="bi bi-sliders mb-2" style="font-size: 1.5rem;"></i>
+                            <small>Backup Config</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Backups and System Information -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6>Recent Backups</h6>
+                            <a href="{% url 'backup:history' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        {% if recent_backups %}
+                            <div class="table-responsive">
+                                <table class="table table-professional mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for backup in recent_backups %}
+                                        <tr>
+                                            <td>
+                                                <div class="date-info">
+                                                    <div class="main-date">{{ backup.created_at|date:"M d, Y H:i" }}</div>
+                                                    {% if backup.notes %}
+                                                        <div class="sub-date">{{ backup.notes|truncatechars:50 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if backup.status == 'SUCCESS' %}success{% elif backup.status == 'FAILED' %}danger{% else %}warning{% endif %}">
+                                                    {{ backup.get_status_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty-state">
+                                <div class="empty-content">
+                                    <i class="bi bi-cloud-slash text-muted" style="font-size: 3rem;"></i>
+                                    <p class="empty-message">No backups found</p>
+                                    <form method="post" action="{% url 'core:instant_backup' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-save btn-sm">Create First Backup</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>System Information</h6>
+                    </div>
+                    <div class="section-body">
+                        <div class="table-responsive">
+                            <table class="table table-professional mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-semibold">Company:</td>
+                                        <td>{{ company.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Currency:</td>
+                                        <td>{{ company.get_currency_display }} ({{ currency_symbol }})</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Email Config:</td>
+                                        <td>
+                                            {% if email_config and email_config.is_active %}
+                                                <span class="status-badge status-active">Active</span>
+                                                <br><small class="text-muted">{{ email_config.email_address }}</small>
+                                            {% else %}
+                                                <span class="status-badge bg-danger text-white">Not Configured</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Backup Settings:</td>
+                                        <td>
+                                            {% if backup_settings and backup_settings.backup_enabled %}
+                                                <span class="status-badge status-active">Enabled</span>
+                                                <br><small class="text-muted">Every {{ backup_settings.backup_frequency_days }} day{{ backup_settings.backup_frequency_days|pluralize }}</small>
+                                            {% else %}
+                                                <span class="status-badge bg-warning text-dark">Disabled</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Reminders:</td>
+                                        <td>
+                                            {% if backup_settings and backup_settings.debtor_reminders_enabled %}
+                                                <span class="status-badge status-active">Enabled</span>
+                                            {% else %}
+                                                <span class="status-badge bg-warning text-dark">Disabled</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Instant Action Buttons */
+.instant-action-btn {
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.instant-action-btn:hover {
+    background-color: #495057;
+    border-color: #495057;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 0.25rem 0.5rem rgba(73, 80, 87, 0.25);
+}
+
+.instant-action-btn i {
+    transition: transform 0.3s ease;
+}
+
+.instant-action-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Loading state for form buttons */
+.instant-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Status badges consistent with your system */
+.status-badge {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .instant-action-btn {
+        min-height: 80px !important;
+        font-size: 0.875rem;
+    }
+    
+    .instant-action-btn i {
+        font-size: 1.25rem !important;
+    }
+    
+    .stat-item-plain .stat-value {
+        font-size: 16px;
+    }
+}
+
+/* Animation for loading states */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.loading {
+    animation: pulse 1.5s infinite;
+}
+</style>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading state to form submissions
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const button = form.querySelector('button[type="submit"]');
+            if (button) {
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm"></span><br><small>Processing...</small>';
+                button.disabled = true;
+                button.classList.add('loading');
+                
+                // Re-enable after 30 seconds as fallback
+                setTimeout(() => {
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                    button.classList.remove('loading');
+                }, 30000);
+            }
+        });
+    });
+
+    // Add click tracking for analytics (optional)
+    document.querySelectorAll('.instant-action-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const action = this.querySelector('small').textContent.trim();
+            console.log(`Admin action clicked: ${action}`);
+            // You can send this to your analytics service if needed
+        });
+    });
+
+    // Auto-refresh system status every 5 minutes
+    setInterval(function() {
+        // Only refresh if user is still on the page and tab is active
+        if (!document.hidden) {
+            fetch('/core/system-status-check/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.needs_refresh) {
+                        // Optionally show a notification that data has changed
+                        console.log('System status updated');
+                        // You could update specific elements here instead of full reload
+                    }
+                })
+                .catch(error => {
+                    console.warn('Status check failed:', error);
+                });
+        }
+    }, 300000); // 5 minutes
+
+    // Add tooltips to action buttons
+    document.querySelectorAll('.instant-action-btn').forEach(button => {
+        const actionText = button.querySelector('small').textContent.trim();
+        let tooltipText = '';
+        
+        switch(actionText) {
+            case 'Create Backup':
+                tooltipText = 'Create a complete system backup including all data and settings';
+                break;
+            case 'Send Reminders':
+                tooltipText = 'Send payment reminder emails to customers with overdue invoices';
+                break;
+            case 'Audit Reminder':
+                tooltipText = 'Send reminder notifications to configured auditors';
+                break;
+            case 'Test Email':
+                tooltipText = 'Send a test email to verify your email configuration';
+                break;
+            case 'Settings':
+                tooltipText = 'Access comprehensive system settings and configuration';
+                break;
+            case 'Backup Config':
+                tooltipText = 'Configure automated backup settings and schedules';
+                break;
+        }
+        
+        if (tooltipText) {
+            button.setAttribute('title', tooltipText);
+            button.setAttribute('data-bs-toggle', 'tooltip');
+        }
+    });
+
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Alt + B for backup
+        if (e.altKey && e.key === 'b') {
+            e.preventDefault();
+            const backupBtn = document.querySelector('form[action*="instant_backup"] button');
+            if (backupBtn) {
+                backupBtn.click();
+            }
+        }
+        
+        // Alt + R for reminders
+        if (e.altKey && e.key === 'r') {
+            e.preventDefault();
+            const reminderBtn = document.querySelector('form[action*="instant_reminders"] button');
+            if (reminderBtn) {
+                reminderBtn.click();
+            }
+        }
+        
+        // Alt + S for settings
+        if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            const settingsBtn = document.querySelector('a[href*="admin_settings"]');
+            if (settingsBtn) {
+                settingsBtn.click();
+            }
+        }
+    });
+
+    // Show keyboard shortcuts help on Ctrl+?
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === '/') {
+            e.preventDefault();
+            alert('Keyboard Shortcuts:\nAlt + B: Create Backup\nAlt + R: Send Reminders\nAlt + S: Open Settings');
+        }
+    });
+});
+
+// Global error handler for failed actions
+window.addEventListener('error', function(e) {
+    console.error('Dashboard error:', e.error);
+    // You could show a user-friendly error message here
+});
+
+// Handle network connectivity
+window.addEventListener('online', function() {
+    console.log('Connection restored');
+    // You could show a success message or refresh data
+});
+
+window.addEventListener('offline', function() {
+    console.log('Connection lost');
+    // You could show a warning message
+});
+</script>
+
+{% endblock %}

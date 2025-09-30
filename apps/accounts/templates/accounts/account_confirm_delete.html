@@ -1,0 +1,187 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\accounts\templates\accounts\account_confirm_delete.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirm Delete{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Confirm Deletion</h2>
+            <p class="text-muted mb-0">This action cannot be undone</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">
+            ← Back
+        </button>
+    </div>
+
+    <!-- Main Container with Shadow -->
+    <div class="form-container">
+        <!-- Warning Section -->
+        <div class="form-section">
+            <div class="section-header warning-header">
+                <h5 class="mb-0">Delete Account</h5>
+            </div>
+            <div class="section-body">
+                <div class="warning-content">
+                    <p class="mb-3">Are you sure you want to delete the account:</p>
+                    <div class="account-info">
+                        <strong>"{{ object.account_number }} - {{ object.name }}"</strong>
+                    </div>
+                    
+                    <div class="warning-message">
+                        <p class="text-danger mb-0">
+                            <strong>Warning:</strong> This action cannot be undone. Deleting an account that has transactions associated with it may cause issues if not handled carefully.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+            <form method="post" class="d-flex gap-3 w-100 justify-content-end">
+                {% csrf_token %}
+                <button type="button" class="btn btn-cancel" onclick="goBack()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-delete">
+                    Yes, Delete Account
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Same base styling as transaction form */
+.form-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+.form-section {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.warning-header {
+    background: #fff3cd;
+    border-bottom: 1px solid #ffeaa7;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+.warning-content {
+    text-align: center;
+}
+
+.account-info {
+    background: #f8f9fa;
+    padding: 1rem;
+    margin: 1rem 0;
+    border: 1px solid #dee2e6;
+    font-size: 16px;
+}
+
+.warning-message {
+    background: #f8d7da;
+    padding: 1rem;
+    margin-top: 1rem;
+    border: 1px solid #f5c6cb;
+}
+
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+    color: white;
+}
+
+.form-actions {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Remove all border radius */
+.btn, .form-container, .section-header, .account-info, .warning-message {
+    border-radius: 0 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .form-actions {
+        padding: 1rem;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

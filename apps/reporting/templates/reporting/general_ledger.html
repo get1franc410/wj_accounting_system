@@ -1,0 +1,241 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\reporting\templates\reporting\general_ledger.html -->
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}General Ledger{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>General Ledger</h2>
+            <p>Complete record of all financial transactions by account</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            {% include 'components/export_buttons.html' with export_url='reporting:export-general-ledger' %}
+        </div>
+    </div>
+
+    <!-- Report Container -->
+    <div class="list-container">
+        <!-- Report Header Section -->
+        <div class="section-container">
+            <div class="section-header text-center">
+                <h5>{{ company_name }}</h5>
+                <p class="mb-1">General Ledger</p>
+                <p class="mb-0 text-muted">As of: {% now "F d, Y" %}</p>
+            </div>
+        </div>
+
+        <!-- Accounts Section -->
+        {% if report_lines %}
+            {% for account_line in report_lines %}
+            <div class="section-container">
+                <!-- Account Header -->
+                <div class="section-header">
+                    <div class="account-info">
+                        <h6 class="mb-1">
+                            <span class="account-badge">{{ account_line.account_code }}</span>
+                            {{ account_line.account_name }}
+                        </h6>
+                        <div class="account-balance">
+                            <span class="text-muted">Current Balance:</span>
+                            <span class="amount-value {% if account_line.final_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ currency_symbol }}{{ account_line.final_balance|floatformat:2 }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions Table -->
+                <div class="section-body table-section">
+                    <div class="table-responsive">
+                        <table class="table table-professional mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 12%">Date</th>
+                                    <th style="width: 8%">Ref</th>
+                                    <th style="width: 40%">Description</th>
+                                    <th style="width: 13%" class="text-end">Debit</th>
+                                    <th style="width: 13%" class="text-end">Credit</th>
+                                    <th style="width: 14%" class="text-end">Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in account_line.transactions %}
+                                <tr>
+                                    <td class="date-info">
+                                        <div class="main-date">{{ tx.date|date:"M d, Y" }}</div>
+                                    </td>
+                                    <td class="text-muted">
+                                        {{ tx.reference|default:"-" }}
+                                    </td>
+                                    <td>
+                                        {{ tx.description }}
+                                    </td>
+                                    <td class="text-end">
+                                        {% if tx.debit > 0 %}
+                                            <span class="amount-value">{{ currency_symbol }}{{ tx.debit|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        {% if tx.credit > 0 %}
+                                            <span class="amount-value">{{ currency_symbol }}{{ tx.credit|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="amount-value {% if tx.balance < 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ currency_symbol }}{{ tx.balance|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">
+                                        No transactions recorded for this account.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            {% if account_line.transactions %}
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Final Balance:</strong></td>
+                                    <td class="text-end">
+                                        <strong class="amount-value {% if account_line.final_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ currency_symbol }}{{ account_line.final_balance|floatformat:2 }}
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Account Summary using existing stat classes -->
+                {% if account_line.transactions %}
+                <div class="section-body">
+                    <div class="row summary-stats-plain">
+                        <div class="col-md-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Total Debits</div>
+                                <div class="stat-value">{{ currency_symbol }}{{ account_line.total_debits|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Total Credits</div>
+                                <div class="stat-value">{{ currency_symbol }}{{ account_line.total_credits|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Transaction Count</div>
+                                <div class="stat-value">{{ account_line.transactions|length }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <!-- Overall Summary Section using existing stat classes -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h6>General Ledger Summary</h6>
+                </div>
+                <div class="section-body">
+                    <div class="row summary-stats">
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-label">Total Accounts</div>
+                                <div class="stat-value">{{ report_lines|length }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-label">Total Transactions</div>
+                                <div class="stat-value" id="total-transactions">{{ total_transactions }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-label">Report Date</div>
+                                <div class="stat-value">{% now "M d, Y" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="section-container">
+                <div class="section-body">
+                    <div class="empty-state">
+                        <div class="empty-content">
+                            <h6 class="text-muted mb-2">No Transactions Found</h6>
+                            <p class="text-muted mb-0 empty-message">
+                                No transactions have been recorded for any account yet.
+                                Start by creating journal entries to populate the general ledger.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/reports/';
+    }
+}
+</script>
+
+<!-- Additional Styles for General Ledger -->
+<style>
+.account-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.account-balance {
+    text-align: right;
+}
+
+.account-balance .amount-value {
+    font-size: 1.1em;
+    margin-left: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .account-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .account-balance {
+        text-align: left;
+    }
+}
+</style>
+{% endblock %}

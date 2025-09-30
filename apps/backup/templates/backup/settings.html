@@ -1,0 +1,211 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\backup\templates\backup\settings.html -->
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="bi bi-sliders"></i> {{ page_title }}</h2>
+        <p class="text-muted">Configure your backup preferences and notification settings.</p>
+        
+        <!-- Email Status Alert -->
+        {% if not email_config or not email_config.is_active %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Email Not Configured:</strong> 
+            Email configuration is required to send backup notifications. 
+            <a href="{% url 'core:admin_settings' %}#email-tab" class="alert-link">
+                Configure email settings in Admin Control Panel
+            </a>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i>
+            <strong>Email Configured:</strong> 
+            Backup notifications will be sent from {{ email_config.email_address }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Navigation Tabs (Removed Email Tab) -->
+<ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="backup-tab" data-bs-toggle="tab" data-bs-target="#backup" type="button" role="tab">
+            <i class="bi bi-cloud-arrow-up"></i> Backup Settings
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="currency-tab" data-bs-toggle="tab" data-bs-target="#currency" type="button" role="tab">
+            <i class="bi bi-currency-exchange"></i> Currency Settings
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="settingsTabContent">
+    <!-- Backup Settings Tab -->
+    <div class="tab-pane fade show active" id="backup" role="tabpanel">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="backup_settings">
+            
+            <!-- Backup Frequency Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock"></i> Backup Frequency</h5>
+                </div>
+                <div class="card-body">
+                    {{ form|crispy }}
+                </div>
+            </div>
+
+            <!-- Email Recipients -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-people"></i> Backup Email Recipients</h5>
+                    <small class="text-muted">Who should receive backup notifications?</small>
+                </div>
+                <div class="card-body">
+                    {% if not email_config or not email_config.is_active %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Email configuration required to send backup notifications.
+                            <a href="{% url 'core:admin_settings' %}#email-tab" class="btn btn-sm btn-primary ms-2">
+                                Configure Email
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    {{ formset.management_form }}
+                    <div id="recipient-forms">
+                        {% for recipient_form in formset %}
+                            <div class="recipient-form row mb-3 p-3 border rounded">
+                                <div class="col-md-8">
+                                    {{ recipient_form.email|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    {% if recipient_form.instance.pk %}
+                                        <div class="form-check me-3">
+                                            {{ recipient_form.DELETE }}
+                                            <label class="form-check-label text-danger" for="{{ recipient_form.DELETE.id_for_label }}">
+                                                Delete
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-recipient">
+                                        <i class="bi bi-trash"></i> Remove
+                                    </button>
+                                </div>
+                                {% for hidden in recipient_form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="button" id="add-recipient" class="btn btn-success btn-sm">
+                        <i class="bi bi-plus"></i> Add Email Recipient
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i> Save Backup Settings
+            </button>
+        </form>
+    </div>
+
+    <!-- Currency Settings Tab -->
+    <div class="tab-pane fade" id="currency" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-currency-exchange"></i> Currency Settings</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="currency_settings">
+                    
+                    {{ currency_form|crispy }}
+                    
+                    <div class="alert alert-warning">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Warning:</strong> 
+                        Changing the currency will affect how amounts are displayed throughout the system. 
+                        Existing transaction amounts will not be converted.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Currency Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// JavaScript for dynamic add/remove email functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const addButton = document.getElementById('add-recipient');
+    const formsContainer = document.getElementById('recipient-forms');
+    
+    if (addButton && formsContainer) {
+        addButton.addEventListener('click', function() {
+            const formCount = document.querySelectorAll('.recipient-form').length;
+            const emptyForm = document.querySelector('.recipient-form');
+            
+            if (emptyForm) {
+                const newForm = emptyForm.cloneNode(true);
+                
+                // Update form indices
+                newForm.innerHTML = newForm.innerHTML.replace(/-\d+-/g, `-${formCount}-`);
+                
+                // Clear the email input
+                const emailInput = newForm.querySelector('input[type="email"]');
+                if (emailInput) {
+                    emailInput.value = '';
+                }
+                
+                // Remove delete checkbox for new forms
+                const deleteDiv = newForm.querySelector('.form-check');
+                if (deleteDiv) {
+                    deleteDiv.remove();
+                }
+                
+                formsContainer.appendChild(newForm);
+                
+                // Update management form
+                const totalForms = document.querySelector('#id_recipients-TOTAL_FORMS');
+                if (totalForms) {
+                    totalForms.value = formCount + 1;
+                }
+            }
+        });
+        
+        // Remove recipient functionality
+        formsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-recipient') || e.target.closest('.remove-recipient')) {
+                const form = e.target.closest('.recipient-form');
+                const deleteCheckbox = form.querySelector('input[type="checkbox"][name*="DELETE"]');
+                
+                if (deleteCheckbox) {
+                    // Mark for deletion if it's an existing record
+                    deleteCheckbox.checked = true;
+                    form.style.display = 'none';
+                } else {
+                    // Remove completely if it's a new form
+                    form.remove();
+                    
+                    // Update total forms count
+                    const totalForms = document.querySelector('#id_recipients-TOTAL_FORMS');
+                    if (totalForms) {
+                        totalForms.value = parseInt(totalForms.value) - 1;
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

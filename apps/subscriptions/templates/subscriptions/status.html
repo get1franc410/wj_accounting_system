@@ -1,0 +1,59 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\subscriptions\templates\subscriptions\status.html -->
+{% extends "base.html" %}
+
+{% block title %}Subscription Status{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card text-center shadow-sm">
+                <!-- STYLE: Removed bg-warning for a cleaner, consistent look -->
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-card-heading me-2"></i>Subscription Status</h4>
+                </div>
+                <div class="card-body p-4">
+                    {% if subscription %}
+                        <h5 class="card-title">Your {{ subscription.get_plan_display }} Plan</h5>
+                        
+                        {% if subscription.is_valid %}
+                            <div class="alert alert-success">
+                                Your subscription is currently <strong>ACTIVE</strong>.
+                            </div>
+                            <p>It will expire on: <strong>{{ subscription.expires_on|date:"F d, Y" }}</strong> ({{ subscription.get_days_remaining }} days remaining).</p>
+                            <a href="{% url 'dashboard:home' %}" class="btn btn-success">Go to Dashboard</a>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                Your subscription is currently <strong>INACTIVE</strong> or has <strong>EXPIRED</strong>.
+                            </div>
+                            <p>
+                                {% if subscription.status == 'EXPIRED' %}
+                                    Your subscription expired on {{ subscription.expires_on|date:"F d, Y" }}.
+                                {% elif subscription.status == 'PENDING' %}
+                                    Your subscription is pending verification.
+                                {% else %}
+                                    Your access has been suspended.
+                                {% endif %}
+                            </p>
+                            <p class="mt-3">Please contact support to renew or reactivate your subscription.</p>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <strong>No subscription found for your company.</strong>
+                        </div>
+                        <p>Your account cannot be fully accessed until a subscription is activated. Please choose a plan to get started.</p>
+                        <div class="mt-4">
+                            <a href="{% url 'subscriptions:register' %}" class="btn btn-dark">
+                                <i class="bi bi-card-checklist"></i> Choose a Plan & Subscribe
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'auth:logout' %}" class="btn btn-outline-secondary">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,561 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\journal\templates\journal\journal_entry_list.html -->
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Journal Entries{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Manual Journal Entries</h2>
+            <p class="text-muted mb-0">View and manage journal entries</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            {% include 'components/export_buttons.html' with export_url='journal:export' %}
+            <a href="{% url 'journal:journal-entry-create' %}" class="btn btn-save">
+                Create New Entry
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Container with Shadow -->
+    <div class="form-container">
+        <!-- Search and Filter Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Search & Filter</h5>
+            </div>
+            <div class="section-body">
+                <form method="get" id="filterForm">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Description, account name, account number...">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="date_from" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="date_to" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex flex-column gap-2">
+                                <button type="submit" class="btn btn-filter">
+                                    Filter
+                                </button>
+                                <a href="{% url 'journal:journal-entry-list' %}" class="btn btn-clear">
+                                    Clear
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Messages Section -->
+        {% if messages %}
+        <div class="form-section">
+            <div class="section-body">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Data Table Section -->
+        <div class="form-section">
+            <div class="table-responsive">
+                <table class="table table-minimal">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Entry ID</th>
+                            <th>Description</th>
+                            <th>Accounts Affected</th>
+                            <th class="text-end">Total Amount</th>
+                            <th class="text-center">Lines</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in journal_entries %}
+                        <tr>
+                            <td>{{ entry.date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="entry-badge">JE-{{ entry.id }}</span>
+                            </td>
+                            <td>
+                                <div class="entry-description">{{ entry.description|truncatechars:50 }}</div>
+                                {% if entry.description|length > 50 %}
+                                    <small class="text-muted" title="{{ entry.description }}">
+                                        Full description on hover
+                                    </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="accounts-list">
+                                    {% for line in entry.lines.all|slice:":3" %}
+                                        <div class="account-item">
+                                            <span class="account-number">{{ line.account.account_number }}</span>
+                                            <span class="account-name">{{ line.account.name }}</span>
+                                        </div>
+                                    {% endfor %}
+                                    {% if entry.lines.count > 3 %}
+                                        <small class="text-muted">
+                                            +{{ entry.lines.count|add:"-3" }} more
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                {% with total_amount=entry.total_amount %}
+                                    <span class="amount-display">
+                                        {{ request.user.company.currency_symbol }}{{ total_amount|floatformat:2|intcomma }}
+                                    </span>
+                                {% endwith %}
+                            </td>
+                            <td class="text-center">
+                                <span class="lines-badge">{{ entry.lines.count }} lines</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="action-buttons">
+                                    <a href="{% url 'journal:journal-entry-detail' entry.pk %}" 
+                                       class="btn btn-view" title="View Details">
+                                        View
+                                    </a>
+                                    {% if user.user_type == 'ADMIN' or user.user_type == 'ACCOUNTANT' %}
+                                        <button class="btn btn-delete" 
+                                                onclick="confirmDelete('{{ entry.pk }}', 'JE-{{ entry.id }}')" 
+                                                title="Delete Entry">
+                                            Delete
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📋</div>
+                                    <p class="empty-message">
+                                        {% if search_query or date_from or date_to %}
+                                            No journal entries found matching your criteria.
+                                        {% else %}
+                                            No manual journal entries found.
+                                        {% endif %}
+                                    </p>
+                                    <a href="{% url 'journal:journal-entry-create' %}" class="btn btn-save">
+                                        Create First Entry
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination Section -->
+        {% if paginator.num_pages > 1 %}
+        <div class="form-section">
+            <div class="section-body">
+                <nav aria-label="Journal entry pagination">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <div class="text-center text-muted mt-3">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} entries
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Summary Statistics -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Summary Statistics</h5>
+            </div>
+            <div class="section-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <h6 class="stat-label">Total Entries (Filtered)</h6>
+                            <span class="stat-value">{{ paginator.count }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <h6 class="stat-label">This Month (Filtered)</h6>
+                            <span class="stat-value">{{ entries_this_month|default:0 }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <h6 class="stat-label">Average Lines (Filtered)</h6>
+                            <span class="stat-value">{{ average_lines|floatformat:1|default:"0" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete journal entry <strong id="entryId"></strong>?</p>
+                <p class="text-danger"><small>⚠️ This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-delete">Delete Entry</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(entryPk, entryId) {
+    document.getElementById('entryId').textContent = entryId;
+    document.getElementById('deleteForm').action = `/journal/delete/${entryPk}/`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Utility function for going back
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/dashboard/';
+    }
+}
+</script>
+
+<!-- Consistent Styling with Transaction Form -->
+<style>
+/* Container with shadow - Same as transaction form */
+.form-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+/* Form sections - Same structure */
+.form-section {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+/* Buttons - Same color scheme as transaction form */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-save {
+    background: #343a40;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #23272b;
+    color: white;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+.btn-filter {
+    background: #495057;
+    color: white;
+}
+
+.btn-filter:hover {
+    background: #343a40;
+    color: white;
+}
+
+.btn-clear {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-clear:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+.btn-view {
+    background: #6c757d;
+    color: white;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn-view:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+    color: white;
+}
+
+/* Form controls - Same as transaction form */
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+}
+
+/* Table styling - Same as transaction form */
+.table-minimal {
+    font-size: 14px;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.table-minimal th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-minimal td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+/* Custom elements */
+.entry-badge {
+    background: #6c757d;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.lines-badge {
+    background: #f8f9fa;
+    color: #495057;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+}
+
+.entry-description {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.accounts-list {
+    font-size: 12px;
+}
+
+.account-item {
+    margin-bottom: 2px;
+}
+
+.account-number {
+    color: #6c757d;
+    margin-right: 4px;
+}
+
+.account-name {
+    color: #2c3e50;
+}
+
+.amount-display {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 2rem;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.empty-message {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+/* Statistics */
+.stat-item {
+    padding: 1rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 14px;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: #495057;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #495057;
+    border-color: #495057;
+}
+
+/* Remove all border radius */
+.btn, .form-control, .form-select, .card, .table, .form-container, .section-header, .entry-badge, .lines-badge {
+    border-radius: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+}
+</style>
+{% endblock %}

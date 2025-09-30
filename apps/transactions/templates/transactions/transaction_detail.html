@@ -1,0 +1,606 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\transactions\templates\transactions\transaction_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Transaction Details</h2>
+            <p class="text-muted mb-0">Complete information for transaction {{ transaction.reference_number|default:transaction.id }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% include 'components/export_buttons.html' with export_url='transactions:export-detail' pk=transaction.pk %}
+            <a href="{% url 'transactions:transaction_invoice' transaction.pk %}" target="_blank" class="btn btn-print">
+                Print Invoice
+            </a>
+            <a href="{% url 'transactions:transaction_update' transaction.pk %}" class="btn btn-edit-main">
+                Edit Transaction
+            </a>
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Container with Shadow -->
+    <div class="form-container">
+        <!-- Transaction Information Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Transaction Information</h5>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="info-group">
+                            <label class="info-label">Transaction Type</label>
+                            <div class="info-value">
+                                <span class="status-badge status-primary">{{ transaction.get_transaction_type_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="info-group">
+                            <label class="info-label">Date</label>
+                            <div class="info-value">{{ transaction.date|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="info-group">
+                            <label class="info-label">Due Date</label>
+                            <div class="info-value">{{ transaction.due_date|date:"M d, Y"|default:"Not Set" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="info-group">
+                            <label class="info-label">Reference Number</label>
+                            <div class="info-value reference-number">{{ transaction.reference_number|default:"Auto Generated" }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="info-group">
+                            <label class="info-label">Customer or Vendor</label>
+                            <div class="info-value">{{ transaction.customer|default:"No Customer Assigned" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="info-group">
+                            <label class="info-label">Category</label>
+                            <div class="info-value">{{ transaction.category|default:"No Category" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="info-group">
+                            <label class="info-label">Attachment</label>
+                            <div class="info-value">
+                                {% if transaction.attachment %}
+                                    <a href="{{ transaction.attachment.url }}" target="_blank" class="btn btn-attachment">
+                                        View Attachment
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">No attachment</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% if transaction.description %}
+                <div class="row">
+                    <div class="col-12">
+                        <div class="info-group">
+                            <label class="info-label">Description</label>
+                            <div class="info-value description-box">{{ transaction.description }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Financial Summary Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Financial Summary</h5>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="financial-card">
+                            <label class="financial-label">Total Amount</label>
+                            <div class="financial-value total-amount">{{ currency_symbol }}{{ transaction.total_amount|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="financial-card">
+                            <label class="financial-label">Amount Paid</label>
+                            <div class="financial-value paid-amount">{{ currency_symbol }}{{ transaction.amount_paid|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="financial-card">
+                            <label class="financial-label">Balance Due</label>
+                            <div class="financial-value balance-amount">{{ currency_symbol }}{{ transaction.balance_due|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="financial-card">
+                            <label class="financial-label">Payment Status</label>
+                            <div class="financial-value">
+                                <!-- FIX: Check for the exact string returned by the model property -->
+                                {% if transaction.payment_status == 'Paid' %}
+                                    <span class="status-badge status-success">Fully Paid</span>
+                                {% elif transaction.payment_status == 'Partially Paid' %}
+                                    <span class="status-badge status-warning">Partially Paid</span>
+                                {% elif transaction.payment_status == 'Unpaid' %}
+                                    <span class="status-badge status-danger">Unpaid</span>
+                                {% else %}
+                                    <span class="status-badge status-secondary">{{ transaction.payment_status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Items Section (if exists) -->
+        {% if transaction.items.exists %}
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Transaction Line Items</h5>
+            </div>
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-minimal mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%">Item or Product</th>
+                                <th style="width: 30%">Description</th>
+                                <th class="text-center" style="width: 12%">Quantity</th>
+                                <th class="text-end" style="width: 15%">Unit Price</th>
+                                <th class="text-end" style="width: 18%">Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in transaction.items.all %}
+                            <tr>
+                                <td>
+                                    <div class="item-info">
+                                        <div class="item-name">{{ item.item }}</div>
+                                        {% if item.item.sku %}
+                                            <div class="item-sku">SKU: {{ item.item.sku }}</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="item-description">{{ item.description|default:"No description" }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="quantity-badge">{{ item.quantity }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="price-value">{{ currency_symbol }}{{ item.unit_price|floatformat:2 }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="total-value">{{ currency_symbol }}{{ item.line_total|floatformat:2 }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-summary">
+                                <th colspan="4" class="text-end">Total Amount:</th>
+                                <th class="text-end">{{ currency_symbol }}{{ transaction.total_amount|floatformat:2 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="action-group">
+                            <h6 class="action-group-title">Transaction Actions</h6>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'transactions:transaction_update' transaction.pk %}" class="btn btn-action-edit">
+                                    Edit This Transaction
+                                </a>
+                                {% if transaction.balance_due > 0 %}
+                                <a href="{% url 'transactions:record_payment' transaction.pk %}" class="btn btn-action-payment">
+                                    Record Payment
+                                </a>
+                                {% endif %}
+                                <button class="btn btn-action-duplicate" onclick="duplicateTransaction()">
+                                    Duplicate Transaction
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="action-group">
+                            <h6 class="action-group-title">Transaction History</h6>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-date">{{ transaction.created_at|date:"M d, Y H:i" }}</div>
+                                    <div class="timeline-event">Transaction created</div>
+                                </div>
+                                {% if transaction.updated_at != transaction.created_at %}
+                                <div class="timeline-item">
+                                    <div class="timeline-date">{{ transaction.updated_at|date:"M d, Y H:i" }}</div>
+                                    <div class="timeline-event">Last updated</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function duplicateTransaction() {
+    if (confirm('Create a copy of this transaction?')) {
+        window.location.href = '{% url "transactions:transaction_create" %}?duplicate={{ transaction.pk }}';
+    }
+}
+
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/transactions/';
+    }
+}
+</script>
+
+<!-- Consistent Styling -->
+<style>
+/* Reuse container and section styling from transaction form */
+.form-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+.form-section {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+/* Button styling - consistent with transaction form */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-edit-main {
+    background: #495057;
+    color: white;
+}
+
+.btn-edit-main:hover {
+    background: #343a40;
+    color: white;
+}
+
+.btn-attachment {
+    background: #e9ecef;
+    color: #495057;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn-attachment:hover {
+    background: #dee2e6;
+    color: #343a40;
+}
+
+.btn-action-edit {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-action-edit:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+.btn-action-payment {
+    background: #28a745;
+    color: white;
+}
+
+.btn-action-payment:hover {
+    background: #218838;
+    color: white;
+}
+
+.btn-action-duplicate {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-action-duplicate:hover {
+    background: #5a6268;
+    color: white;
+}
+
+/* ACTION: Added the new style for the print button */
+.btn-print {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.btn-print:hover {
+    background: #bee5eb;
+    color: #0c5460;
+}
+
+/* Information display styling */
+.info-group {
+    margin-bottom: 1rem;
+}
+
+.info-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font-size: 14px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.reference-number {
+    font-family: 'Courier New', monospace;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    display: inline-block;
+}
+
+.description-box {
+    background: #f8f9fa;
+    padding: 12px;
+    border: 1px solid #e9ecef;
+    font-style: italic;
+}
+
+/* Financial cards */
+.financial-card {
+    background: #f8f9fa;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.financial-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.financial-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.total-amount {
+    color: #28a745;
+}
+
+.paid-amount {
+    color: #007bff;
+}
+
+.balance-amount {
+    color: #dc3545;
+}
+
+/* Status badges - consistent with list */
+.status-badge {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-success { background: #d4edda; color: #155724; }
+.status-primary { background: #d1ecf1; color: #0c5460; }
+.status-warning { background: #fff3cd; color: #856404; }
+.status-danger { background: #f8d7da; color: #721c24; }
+
+/* Table styling - consistent with transaction form */
+.table-minimal {
+    font-size: 14px;
+    border-collapse: collapse;
+}
+
+.table-minimal th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-minimal td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+.table-summary th {
+    background: #e9ecef;
+    font-weight: 700;
+}
+
+/* Item display styling */
+.item-info {
+    line-height: 1.4;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.item-sku {
+    font-size: 11px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.item-description {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.quantity-badge {
+    background: #e9ecef;
+    padding: 4px 8px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.price-value, .total-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Action groups */
+.action-group {
+    background: #f8f9fa;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    height: 100%;
+}
+
+.action-group-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Timeline styling */
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    margin-bottom: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid #e9ecef;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-date {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.timeline-event {
+    font-size: 13px;
+    color: #495057;
+    margin-top: 2px;
+}
+
+/* Remove all border radius */
+.btn, .form-container, .section-header, .status-badge, .financial-card, .action-group, .reference-number, .description-box, .quantity-badge {
+    border-radius: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .financial-card {
+        margin-bottom: 1rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .financial-value {
+        font-size: 16px;
+    }
+}
+</style>
+{% endblock %}

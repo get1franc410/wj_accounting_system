@@ -1,0 +1,43 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\emails\welcome_new_admin.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to WJ Accounting System</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { padding: 20px; border: 1px solid #ddd; border-radius: 5px; max-width: 600px; margin: auto; }
+        .header { font-size: 24px; color: #000; }
+        .credentials { background-color: #f9f9f9; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0; }
+        .footer { font-size: 0.9em; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="header">Welcome to WJ Accounting System, {{ contact_name }}!</h2>
+        
+        <p>Your company, <strong>{{ company_name }}</strong>, has been successfully registered and your subscription is now active.</p>
+
+        <div class="credentials">
+            <h4>Your Subscription Details:</h4>
+            <ul>
+                <li><strong>Plan:</strong> {{ plan_name }}</li>
+                <li><strong>Expires On:</strong> {{ expires_on|date:"F d, Y" }}</li>
+            </ul>
+        </div>
+        
+        <div class="credentials">
+            <h4>Your Login Credentials:</h4>
+            <ul>
+                <li><strong>Login URL:</strong> <a href="{{ login_url }}">{{ login_url }}</a></li>
+                <li><strong>Username:</strong> {{ username }}</li>
+                <li><strong>Temporary Password:</strong> {{ password }}</li>
+            </ul>
+        </div>
+
+        <p><strong>Important:</strong> You will be required to change your password upon your first login for security.</p>
+        
+        <hr>
+        <p class="footer">Thank you for choosing WJ Accounting System!</p>
+    </div>
+</body>
+</html>

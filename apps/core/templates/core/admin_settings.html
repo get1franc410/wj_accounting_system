@@ -1,0 +1,881 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+{% block title %}Admin Control Panel{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>Admin Control Panel</h2>
+            <p>Complete system management for {{ user.company.name }}
+                <span class="badge bg-primary ms-2">{{ user.get_user_type_display }}</span>
+            </p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- SUBSCRIPTION STATUS WARNINGS -->
+    {% if not subscription or not subscription.is_valid %}
+    <div class="list-container mb-4">
+        <div class="section-container">
+            <div class="section-body">
+                <div class="alert alert-danger mb-0">
+                    <h6><i class="bi bi-exclamation-triangle"></i> Subscription Issue</h6>
+                    {% if not subscription %}
+                        <p class="mb-2">No active subscription found. Please check your subscription status to continue using the system.</p>
+                    {% else %}
+                        <p class="mb-2">Your subscription is inactive or has expired. Please check your status to resolve this.</p>
+                    {% endif %}
+                    <a href="{% url 'subscriptions:status' %}" class="btn btn-outline-light btn-sm">Check Subscription Status</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif subscription.get_days_remaining is not None and subscription.get_days_remaining <= 7 %}
+    <div class="list-container mb-4">
+        <div class="section-container">
+            <div class="section-body">
+                <div class="alert alert-warning mb-0">
+                    <h6><i class="bi bi-clock"></i> Subscription Expiring Soon</h6>
+                    <p class="mb-2">Your subscription expires in {{ subscription.get_days_remaining }} day{{ subscription.get_days_remaining|pluralize }}. Please contact support to renew and avoid service interruption.</p>
+                    <a href="{% url 'subscriptions:status' %}" class="btn btn-outline-dark btn-sm">View Subscription Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SYSTEM STATUS OVERVIEW -->
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>System Status Overview</h6>
+            </div>
+            <div class="section-body">
+                <div class="summary-stats-plain">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Total Users</div>
+                                <div class="stat-value">{{ system_status.total_users|default:0 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Active Customers</div>
+                                <div class="stat-value">{{ system_status.active_customers|default:0 }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Total Transactions</div>
+                                <div class="stat-value">{{ system_status.total_transactions|default:0|intcomma }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stat-item-plain">
+                                <div class="stat-label">Last Backup</div>
+                                <div class="stat-value">
+                                    {% if system_status.last_backup %}
+                                        {{ system_status.last_backup.created_at|timesince }} ago
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6>Quick Actions & System Controls</h6>
+                        <small class="text-muted">Actions are enabled/disabled based on your configurations</small>
+                    </div>
+                    {% if subscription %}
+                        <span class="badge bg-{% if subscription.is_valid %}success{% else %}danger{% endif %}">
+                            {{ subscription.get_plan_display }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="row g-3">
+                    <!-- Backup Action -->
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <div class="action-card">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="backupToggle" 
+                                       {% if backup_settings.backup_enabled %}checked{% endif %} {% if not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                <label class="form-check-label small fw-semibold" for="backupToggle">
+                                    Backup System
+                                    {% if not subscription or not subscription.is_valid %}
+                                        <i class="bi bi-lock text-warning ms-1" title="Subscription required"></i>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary w-100 backup-btn" 
+                                    {% if not backup_settings.backup_enabled or not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                Create Backup
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Email Reminders -->
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <div class="action-card">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="reminderToggle" 
+                                       {% if backup_settings.debtor_reminders_enabled %}checked{% endif %} {% if not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                <label class="form-check-label small fw-semibold" for="reminderToggle">
+                                    Email Reminders
+                                    {% if not subscription or not subscription.is_valid %}
+                                        <i class="bi bi-lock text-warning ms-1" title="Subscription required"></i>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary w-100 reminder-btn" 
+                                    {% if not backup_settings.debtor_reminders_enabled or not email_config.is_active or not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                Send Reminders
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Audit System -->
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <div class="action-card">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="auditToggle" 
+                                       {% if backup_settings.audit_reminders_enabled %}checked{% endif %} {% if not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                <label class="form-check-label small fw-semibold" for="auditToggle">
+                                    Audit System
+                                    {% if not subscription or not subscription.is_valid %}
+                                        <i class="bi bi-lock text-warning ms-1" title="Subscription required"></i>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary w-100 audit-btn" 
+                                    {% if not backup_settings.audit_reminders_enabled or not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                Audit Reminder
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Audit Documents -->
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <div class="action-card">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="auditDocsToggle" 
+                                       {% if backup_settings.audit_reminders_enabled and email_config.is_active %}checked{% endif %} {% if not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                <label class="form-check-label small fw-semibold" for="auditDocsToggle">
+                                    Audit Documents
+                                    {% if not subscription or not subscription.is_valid %}
+                                        <i class="bi bi-lock text-warning ms-1" title="Subscription required"></i>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary w-100 audit-docs-btn" 
+                                    {% if not backup_settings.audit_reminders_enabled or not email_config.is_active or not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                Audit Documents
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Email Test -->
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <div class="action-card">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="emailToggle" 
+                                       {% if email_config.is_active %}checked{% endif %} {% if not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                <label class="form-check-label small fw-semibold" for="emailToggle">
+                                    Email System
+                                    {% if not subscription or not subscription.is_valid %}
+                                        <i class="bi bi-lock text-warning ms-1" title="Subscription required"></i>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary w-100 email-test-btn" 
+                                    {% if not email_config.is_active or not subscription or not subscription.is_valid %}disabled{% endif %}>
+                                Test Email
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Access -->
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <div class="action-card">
+                            <div class="mb-2">
+                                <label class="small fw-semibold text-muted">Quick Access</label>
+                            </div>
+                            <div class="d-grid gap-1">
+                                <a href="{% url 'backup:settings' %}" class="btn btn-outline-secondary btn-sm">
+                                    Config
+                                </a>
+                                <a href="{% url 'backup:history' %}" class="btn btn-outline-secondary btn-sm">
+                                    History
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN-ONLY CONFIGURATION TABS -->
+    {% if user.user_type == 'ADMIN' %}
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <ul class="nav nav-tabs border-0" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active border-0" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                            Overview
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link border-0" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab">
+                            Company Setup
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link border-0" id="subscription-tab" data-bs-toggle="tab" data-bs-target="#subscription" type="button" role="tab">
+                            Subscription
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link border-0" id="auditor-tab" data-bs-toggle="tab" data-bs-target="#auditor" type="button" role="tab">
+                            Auditor Info
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link border-0" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button" role="tab">
+                            Email Config
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link border-0" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
+                            Categories
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="section-body">
+                <div class="tab-content" id="adminTabContent">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-6 mb-4">
+                                <div class="section-container">
+                                    <div class="section-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6>Recent Backups</h6>
+                                            <a href="{% url 'backup:history' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                                        </div>
+                                    </div>
+                                    <div class="section-body">
+                                        {% if recent_backups %}
+                                            <div class="table-responsive">
+                                                <table class="table table-professional mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                                                                        <tbody>
+                                                        {% for backup in recent_backups %}
+                                                        <tr>
+                                                            <td>
+                                                                <div class="fw-semibold">{{ backup.created_at|date:"M d, Y H:i" }}</div>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-{% if backup.status == 'SUCCESS' %}success{% elif backup.status == 'FAILED' %}danger{% else %}warning{% endif %}">
+                                                                    {{ backup.get_status_display }}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="empty-state">
+                                                <div class="empty-content">
+                                                    <p class="empty-message">No backups found</p>
+                                                    <button type="button" class="btn btn-primary btn-sm backup-btn">Create First Backup</button>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-6 mb-4">
+                                <div class="section-container">
+                                    <div class="section-header">
+                                        <h6>System Information</h6>
+                                    </div>
+                                    <div class="section-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-professional mb-0">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="fw-semibold">Company:</td>
+                                                        <td>{{ user.company.name }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-semibold">Currency:</td>
+                                                        <td>{{ user.company.get_currency_display }} ({{ currency_symbol }})</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-semibold">Email Config:</td>
+                                                        <td>
+                                                            {% if email_config and email_config.is_active %}
+                                                                <span class="badge bg-success">Active</span>
+                                                            {% else %}
+                                                                <span class="badge bg-danger">Not Configured</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-semibold">Subscription:</td>
+                                                        <td>
+                                                            {% if subscription and subscription.is_valid %}
+                                                                <span class="badge bg-success">Active</span>
+                                                                {% if subscription.get_days_remaining is not None and subscription.get_days_remaining <= 30 %}
+                                                                    <br><small class="text-warning">({{ subscription.get_days_remaining }} days left)</small>
+                                                                {% endif %}
+                                                            {% else %}
+                                                                <span class="badge bg-danger">Inactive/Expired</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Setup Tab -->
+                    <div class="tab-pane fade" id="company" role="tabpanel">
+                        <div class="section-container">
+                            <div class="section-header">
+                                <h6>Company Information</h6>
+                                <small class="text-muted">This information appears on reports and communications</small>
+                            </div>
+                            <div class="section-body">
+                                <form method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="user_company">
+                                    
+                                    <div class="form-row-2col">
+                                        <div>{{ user_company_form.name|as_crispy_field }}</div>
+                                        <div>{{ user_company_form.industry|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-row-2col">
+                                        <div>{{ user_company_form.registration_number|as_crispy_field }}</div>
+                                        <div>{{ user_company_form.phone|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-row-2col">
+                                        <div>{{ user_company_form.email|as_crispy_field }}</div>
+                                        <div>{{ user_company_form.website|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-12">{{ user_company_form.address|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-row-2col">
+                                        <div>{{ user_company_form.logo|as_crispy_field }}</div>
+                                        <div>{{ user_company_form.currency|as_crispy_field }}</div>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-save">
+                                            Save Company Information
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Tab -->
+                    <div class="tab-pane fade" id="subscription" role="tabpanel">
+                        <div class="section-container">
+                            <div class="section-header">
+                                <h6>Subscription Details</h6>
+                                <small class="text-muted">Manage and view your software subscription</small>
+                            </div>
+                            <div class="section-body">
+                                {% if subscription %}
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Plan Information</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-professional mb-0">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="fw-semibold">Plan Name:</td>
+                                                            <td>{{ subscription.get_plan_display }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="fw-semibold">Start Date:</td>
+                                                            <td>{{ subscription.activated_on|date:"M d, Y" }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="fw-semibold">End Date:</td>
+                                                            <td>{{ subscription.expires_on|date:"M d, Y" }}</td>
+                                                        </tr>
+                                                                                                                <tr>
+                                                            <td class="fw-semibold">Max Users:</td>
+                                                            <td>{{ subscription.max_users }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Subscription Status</h6>
+                                            {% if subscription.is_valid %}
+                                                <div class="alert alert-success">
+                                                    <i class="bi bi-check-circle"></i> Subscription is active and valid.
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-danger">
+                                                    <i class="bi bi-x-circle"></i> Subscription is inactive or has expired.
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <h6 class="mt-3">Included Features</h6>
+                                            <ul class="list-unstyled">
+                                                {% for feature in subscription_features %}
+                                                    <li class="mb-1">
+                                                        <small class="text-success"><i class="bi bi-check"></i> {{ feature }}</small>
+                                                    </li>
+                                                {% empty %}
+                                                    <li class="mb-1"><small class="text-muted">No specific features listed for this plan.</small></li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <a href="{% url 'subscriptions:status' %}" class="btn btn-save">
+                                            View Subscription Status
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        <strong>No subscription found for your company.</strong>
+                                        <p class="mb-0 mt-2">To unlock all features and secure your account, please select a subscription plan.</p>
+                                    </div>
+                                    <div class="form-actions">
+                                        <a href="{% url 'subscriptions:register' %}" class="btn btn-save btn-lg">
+                                            <i class="bi bi-card-checklist"></i> Select a Plan & Subscribe
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auditor Company Tab -->
+                    <div class="tab-pane fade" id="auditor" role="tabpanel">
+                        <div class="section-container">
+                            <div class="section-header">
+                                <h6>External Auditor Information</h6>
+                                <small class="text-muted">Configure your external auditing firm details</small>
+                            </div>
+                            <div class="section-body">
+                                {% if not auditor_company %}
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle"></i>
+                                        <strong>Default Auditor Loaded:</strong> You can modify these details.
+                                    </div>
+                                {% endif %}
+                                
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="auditor_company">
+                                    
+                                    <div class="form-row-2col">
+                                        <div>{{ auditor_company_form.name|as_crispy_field }}</div>
+                                        <div>{{ auditor_company_form.phone|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-row-2col">
+                                        <div>{{ auditor_company_form.email|as_crispy_field }}</div>
+                                        <div>{{ auditor_company_form.website|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-row-2col">
+                                        <div>{{ auditor_company_form.registration_number|as_crispy_field }}</div>
+                                        <div>{{ auditor_company_form.industry|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            {{ auditor_company_form.address|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-save">
+                                            Save Auditor Information
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Configuration Tab -->
+                    <div class="tab-pane fade" id="email" role="tabpanel">
+                        <div class="section-container">
+                            <div class="section-header">
+                                <h6>Email Configuration</h6>
+                                <small class="text-muted">Configure email settings for system notifications</small>
+                            </div>
+                            <div class="section-body">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="email_config">
+                                    
+                                    {{ email_form|crispy }}
+                                    
+                                    <div class="alert alert-info">
+                                        <strong><i class="bi bi-info-circle"></i> Important:</strong> 
+                                        For Gmail, use an "App Password" for security. 
+                                        <a href="https://support.google.com/accounts/answer/185833" target="_blank" class="alert-link">
+                                            Learn how <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-save">
+                                            Save Email Configuration
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categories Tab -->
+                    <div class="tab-pane fade" id="categories" role="tabpanel">
+                        <div class="section-container">
+                            <div class="section-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6>Transaction Categories</h6>
+                                        <small class="text-muted">Organize your transactions for better reporting</small>
+                                    </div>
+                                    <button type="button" class="btn btn-save btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                        Add Category
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="section-body p-0">
+                                {% if categories %}
+                                    <div class="table-responsive">
+                                        <table class="table table-professional mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Type</th>
+                                                    <th>Default Account</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for category in categories %}
+                                                <tr>
+                                                    <td>
+                                                        <div class="fw-semibold">{{ category.name }}</div>
+                                                        {% if category.description %}
+                                                            <small class="text-muted">{{ category.description|truncatechars:50 }}</small>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-{% if category.account_type.category == 'REVENUE' %}success{% elif category.account_type.category == 'EXPENSE' %}danger{% elif category.account_type.category == 'ASSET' %}primary{% elif category.account_type.category == 'LIABILITY' %}warning{% else %}info{% endif %}">
+                                                            {{ category.account_type.get_category_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% if category.default_account %}
+                                                            <small>{{ category.default_account.account_number }} - {{ category.default_account.name }}</small>
+                                                        {% else %}
+                                                            <span class="text-muted">Not set</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if category.is_active %}
+                                                            <span class="badge bg-success">Active</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">Inactive</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-links">
+                                                            <a href="#" class="action-link edit-category-btn" 
+                                                               data-category-id="{{ category.id }}"
+                                                               data-bs-toggle="modal" 
+                                                               data-bs-target="#editCategoryModal">
+                                                                Edit
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <div class="empty-content">
+                                            <p class="empty-message">No transaction categories found. Create your first category to get started.</p>
+                                            <button type="button" class="btn btn-save" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                                Create First Category
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- NON-ADMIN USER DASHBOARD (This part is hidden for Admins but here for completeness) -->
+    {% if user.user_type != 'ADMIN' %}
+    <div class="list-container">
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Your Dashboard</h6>
+                <small class="text-muted">Quick access to your permitted functions</small>
+            </div>
+            <div class="section-body">
+                <div class="row g-3">
+                    {% if user.user_type == 'ACCOUNTANT' or user.user_type == 'MANAGER' %}
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a href="{% url 'backup:settings' %}" class="btn btn-outline-secondary w-100 dashboard-link">
+                                <i class="bi bi-sliders mb-2"></i>
+                                <br>Backup Settings
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'backup:history' %}" class="btn btn-outline-secondary w-100 dashboard-link">
+                            <i class="bi bi-clock-history mb-2"></i>
+                            <br>Backup History
+                        </a>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'auth:change_password' %}" class="btn btn-outline-secondary w-100 dashboard-link">
+                            <i class="bi bi-key mb-2"></i>
+                            <br>Change Password
+                        </a>
+                    </div>
+                    
+                    {% if user.user_type == 'STOCK_KEEPER' %}
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a href="{% url 'inventory:item_list' %}" class="btn btn-outline-secondary w-100 dashboard-link">
+                                <i class="bi bi-box mb-2"></i>
+                                <br>Inventory
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modals for Category Management -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Transaction Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCategoryForm" method="post" action="{% url 'core:add_category' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ category_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save">
+                        Add Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Transaction Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCategoryForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div id="editCategoryFormContent">
+                        <!-- Form content will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save">
+                        Update Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.action-card { padding: 1rem; background: #f8f9fa; border: 1px solid #e9ecef; transition: all 0.3s ease; height: 100%; }
+.action-card:hover { background: #ffffff; border-color: #495057; box-shadow: 0 0.25rem 0.5rem rgba(73, 80, 87, 0.1); }
+.action-card .btn { transition: all 0.3s ease; border: 1px solid #dee2e6; padding: 0.75rem; }
+.action-card .btn:hover:not(:disabled) { background-color: #495057; border-color: #495057; color: white; transform: translateY(-1px); }
+.dashboard-link { padding: 2rem 1rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; transition: all 0.3s ease; border: 1px solid #dee2e6; }
+.dashboard-link:hover { background-color: #495057; border-color: #495057; color: white !important; transform: translateY(-2px); }
+.dashboard-link i { font-size: 1.5rem; }
+.nav-tabs .nav-link { border: none; color: #6c757d; transition: all 0.3s ease; padding: 0.75rem 1rem; }
+.nav-tabs .nav-link.active { color: #495057; background-color: transparent; border-bottom: 2px solid #495057; font-weight: 600; }
+</style>
+
+<script>
+function checkSubscriptionAndExecute(url, confirmMessage) {
+    {% if not subscription or not subscription.is_valid %}
+        alert('This feature is restricted due to an inactive or expired subscription. Please check your subscription status.');
+        window.location.href = '{% url "subscriptions:status" %}';
+        return false;
+    {% endif %}
+    
+    if (confirm(confirmMessage)) {
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+        button.disabled = true;
+        
+        // Use a form to POST and handle redirect
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        form.appendChild(csrfInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function showToast(message, type = 'info') {
+    const toastContainer = document.querySelector('.toast-container') || document.createElement('div');
+    if (!toastContainer.classList.contains('toast-container')) {
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '1055';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    toastContainer.appendChild(toastEl);
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.edit-category-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const categoryId = this.dataset.categoryId;
+            const form = document.getElementById('editCategoryForm');
+            form.action = `/core/edit-category/${categoryId}/`;
+            
+            fetch(`/core/get-category/${categoryId}/`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('editCategoryFormContent').innerHTML = html;
+                })
+                .catch(error => console.error('Error loading category form:', error));
+        });
+    });
+
+    // Handle instant action buttons
+    document.querySelector('.backup-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkSubscriptionAndExecute('{% url "core:instant_backup" %}', 'Create backup now? This may take a few moments.');
+    });
+    
+    document.querySelector('.reminder-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkSubscriptionAndExecute('{% url "core:send_instant_reminders" %}', 'Send payment reminders to all customers with overdue invoices?');
+    });
+    
+    document.querySelector('.audit-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkSubscriptionAndExecute('{% url "core:send_audit_reminder" %}', 'Send audit reminder to all auditors?');
+    });
+    
+    document.querySelector('.audit-docs-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkSubscriptionAndExecute('{% url "core:send_audit_documents" %}', 'Send complete audit documents package to auditors? This may take a few moments.');
+    });
+    
+    document.querySelector('.email-test-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkSubscriptionAndExecute('{% url "core:test_email_config" %}', 'Send test email to verify configuration?');
+    });
+});
+</script>
+
+{% endblock %}

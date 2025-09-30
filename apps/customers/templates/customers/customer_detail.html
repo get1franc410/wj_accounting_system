@@ -1,0 +1,340 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\customers\templates\customers\customer_detail.html -->
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Actions -->
+    <div class="page-header">
+        <div>
+            <h2>{{ customer.name }}</h2>
+            <p>Customer and vendor details</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-back" onclick="goBack()">← Back</button>
+            
+            {% if customer.receivable_balance > 0 and customer.email %}
+                <a href="{% url 'customers:send-reminder-email' customer.pk %}" class="btn btn-secondary-action">
+                    Send Reminder
+                </a>
+            {% endif %}
+
+            <a href="{% url 'customers:customer-update' customer.pk %}" class="btn btn-secondary-action">
+                Edit
+            </a>
+            <a href="{% url 'customers:customer-delete' customer.pk %}" class="btn btn-delete">
+                Delete
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="list-container">
+        <div class="row">
+            <!-- Left Column: Balance Information -->
+            <div class="col-lg-4">
+                {% if customer.entity_type == 'customer' or customer.entity_type == 'both' %}
+                <div class="section-container mb-3">
+                    <div class="section-header">
+                        <h6>Money Owed To Us (A/R)</h6>
+                    </div>
+                    <div class="section-body text-center">
+                        <div class="stat-value text-danger">
+                            {{ request.user.company.currency_symbol }}{{ customer.receivable_balance|floatformat:2|intcomma }}
+                        </div>
+                        <div class="stat-detail">
+                            Credit Limit: {{ request.user.company.currency_symbol }}{{ customer.credit_limit|floatformat:2|intcomma }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if customer.entity_type == 'vendor' or customer.entity_type == 'both' %}
+                <div class="section-container mb-3">
+                    <div class="section-header">
+                        <h6>Money We Owe (A/P)</h6>
+                    </div>
+                    <div class="section-body text-center">
+                        <div class="stat-value text-success">
+                            {{ request.user.company.currency_symbol }}{{ customer.payable_balance|floatformat:2|intcomma }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Contact Details -->
+            <div class="col-lg-8">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h5>Contact Information</h5>
+                    </div>
+                    <div class="section-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="stat-label">Type</div>
+                                <div class="stat-value">
+                                    <span class="badge-status {% if customer.entity_type == 'customer' %}badge-success{% elif customer.entity_type == 'vendor' %}badge-info{% else %}badge-secondary{% endif %}">
+                                        {{ customer.get_entity_type_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="stat-label">Email</div>
+                                <div class="stat-value">{{ customer.email|default:"Not provided" }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="stat-label">Phone</div>
+                                <div class="stat-value">{{ customer.phone|default:"Not provided" }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="stat-label">Address</div>
+                                <div class="stat-value">{{ customer.address|default:"Not provided"|linebreaksbr }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History Section -->
+        <div class="section-container mt-4">
+            <div class="section-header">
+                <h5>Transaction History</h5>
+            </div>
+            <div class="section-body p-0">
+                {% if transaction_history %}
+                    <div class="table-responsive">
+                        <table class="table table-professional mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>ID</th>
+                                    <th class="text-end">Total Amount</th>
+                                    <th class="text-end">Amount Paid</th>
+                                    <th class="text-end">Balance Due</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in transaction_history %}
+                                    <!-- Main Transaction Row -->
+                                    <tr>
+                                        <td>{{ tx.date|date:"Y-m-d" }}</td>
+                                        <td>
+                                            {% if tx.transaction_type == 'SALE' %}
+                                                <span class="badge-status badge-success">{{ tx.get_transaction_type_display }}</span>
+                                            {% elif tx.transaction_type == 'PURCHASE' %}
+                                                <span class="badge-status badge-warning">{{ tx.get_transaction_type_display }}</span>
+                                            {% elif tx.transaction_type == 'PAYMENT' %}
+                                                <span class="badge-status badge-info">{{ tx.get_transaction_type_display }}</span>
+                                            {% else %}
+                                                <span class="badge-status badge-secondary">{{ tx.get_transaction_type_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>#{{ tx.id }}</td>
+                                        <td class="text-end">
+                                            {{ request.user.company.currency_symbol }}{{ tx.total_amount|floatformat:2|intcomma }}
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="{% if tx.amount_paid > 0 %}text-success{% else %}text-muted{% endif %}">
+                                                {{ request.user.company.currency_symbol }}{{ tx.amount_paid|floatformat:2|intcomma }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            {% if tx.transaction_type == 'PAYMENT' %}
+                                                <span class="text-success">{{ request.user.company.currency_symbol }}0.00</span>
+                                            {% elif tx.transaction_type == 'PURCHASE' %}
+                                                <span class="text-warning">{{ request.user.company.currency_symbol }}{{ tx.balance_due|floatformat:2|intcomma }}</span>
+                                            {% else %}
+                                                <span class="text-danger">{{ request.user.company.currency_symbol }}{{ tx.balance_due|floatformat:2|intcomma }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if tx.transaction_type == 'PAYMENT' %}
+                                                <span class="badge-status badge-success">Payment</span>
+                                            {% elif tx.balance_due <= 0 %}
+                                                <span class="badge-status badge-success">Paid</span>
+                                            {% elif tx.amount_paid > 0 %}
+                                                <span class="badge-status badge-warning">Partial</span>
+                                            {% else %}
+                                                <span class="badge-status badge-danger">Unpaid</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'transactions:transaction_detail' tx.pk %}" class="btn btn-view">View</a>
+                                                
+                                                {% if tx.balance_due > 0 and tx.transaction_type != 'PAYMENT' and user.user_type == 'ADMIN' or user.user_type == 'ACCOUNTANT' %}
+                                                    <button class="btn btn-secondary-action btn-action-sm" 
+                                                            onclick="recordPayment({{ tx.id }}, {{ tx.balance_due }}, '{{ tx.reference_number|default:tx.id }}', '{{ tx.transaction_type }}', '{{ tx.get_transaction_type_display }}')">
+                                                        Record Payment
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- 🎯 NEW: Show Related Payments -->
+                                    {% if tx.related_payments %}
+                                        {% for payment in tx.related_payments %}
+                                        <tr class="table-secondary">
+                                            <td class="ps-4">
+                                                <small>{{ payment.date|date:"Y-m-d" }}</small>
+                                            </td>
+                                            <td>
+                                                <small><span class="badge-status badge-info">Payment</span></small>
+                                            </td>
+                                            <td>
+                                                <small>#{{ payment.id }}</small>
+                                            </td>
+                                            <td class="text-end">
+                                                <small class="text-success">+{{ request.user.company.currency_symbol }}{{ payment.total_amount|floatformat:2|intcomma }}</small>
+                                            </td>
+                                            <td class="text-end">
+                                                <small>{{ payment.reference_number|default:"" }}</small>
+                                            </td>
+                                            <td class="text-end">
+                                                <small class="text-muted">{{ payment.description|truncatechars:30 }}</small>
+                                            </td>
+                                            <td>
+                                                <small><span class="badge-status badge-success">Received</span></small>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'transactions:transaction_detail' payment.pk %}" class="btn btn-sm btn-outline-secondary">View</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <div class="empty-state-text">No transactions found for this customer/vendor.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Payment Modal that handles both Customer and Vendor payments -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="paymentForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Record Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="transaction_id" name="transaction_id">
+                    <input type="hidden" id="payment_type" name="payment_type">
+                    
+                    <div class="alert alert-info">
+                        <strong>Transaction:</strong> <span id="transaction_ref"></span><br>
+                        <strong>Type:</strong> <span id="transaction_type_display"></span><br>
+                        <strong>Balance Due:</strong> <span id="balance_due_display"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payment_amount" class="form-label">Payment Amount *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ request.user.company.currency_symbol }}</span>
+                            <input type="number" step="0.01" id="payment_amount" name="amount" 
+                                   class="form-control" required min="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-text" id="payment_help_text">Enter the amount received from the customer</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payment_date" class="form-label">Payment Date *</label>
+                        <input type="date" id="payment_date" name="payment_date" 
+                               class="form-control" required value="{% now 'Y-m-d' %}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payment_notes" class="form-label">Notes (Optional)</label>
+                        <textarea id="payment_notes" name="notes" class="form-control" rows="3" 
+                                  placeholder="Payment method, reference number, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "customers:customer-list" %}';
+    }
+}
+
+function recordPayment(transactionId, balanceDue, transactionRef, transactionType, transactionTypeDisplay) {
+    // Set form values
+    document.getElementById('transaction_id').value = transactionId;
+    document.getElementById('transaction_ref').textContent = transactionRef ? `#${transactionRef}` : `#${transactionId}`;
+    document.getElementById('transaction_type_display').textContent = transactionTypeDisplay;
+    document.getElementById('balance_due_display').textContent = `{{ request.user.company.currency_symbol }}${balanceDue.toFixed(2)}`;
+    
+    // Set payment amount
+    const paymentAmountInput = document.getElementById('payment_amount');
+    paymentAmountInput.max = balanceDue;
+    paymentAmountInput.value = balanceDue.toFixed(2);
+    
+    // Set form action and help text based on transaction type
+    const form = document.getElementById('paymentForm');
+    const helpText = document.getElementById('payment_help_text');
+    
+    if (transactionType === 'SALE') {
+        // Customer payment
+        form.action = "{% url 'customers:record-payment' customer.pk %}";
+        helpText.textContent = "Enter the amount received from the customer";
+        document.getElementById('payment_type').value = 'customer';
+    } else if (transactionType === 'PURCHASE' || transactionType === 'EXPENSE') {
+        // Vendor payment
+        form.action = "{% url 'customers:record-vendor-payment' customer.pk %}";
+        helpText.textContent = "Enter the amount paid to the vendor";
+        document.getElementById('payment_type').value = 'vendor';
+    } else {
+        // Default to customer payment
+        form.action = "{% url 'customers:record-payment' customer.pk %}";
+        helpText.textContent = "Enter the payment amount";
+        document.getElementById('payment_type').value = 'customer';
+    }
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    modal.show();
+}
+
+// Validate payment amount
+document.getElementById('payment_amount').addEventListener('input', function() {
+    const maxAmount = parseFloat(this.max);
+    const enteredAmount = parseFloat(this.value);
+    
+    if (enteredAmount > maxAmount) {
+        this.setCustomValidity(`Payment cannot exceed balance due of {{ request.user.company.currency_symbol }}${maxAmount.toFixed(2)}`);
+    } else if (enteredAmount <= 0) {
+        this.setCustomValidity('Payment amount must be greater than zero');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}

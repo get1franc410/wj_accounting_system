@@ -1,0 +1,210 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\reporting\templates\reporting\trial_balance.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Trial Balance{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>Trial Balance</h2>
+            <p>View account balances and verify books are in balance</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            {% include 'components/export_buttons.html' with export_url='reporting:export-trial-balance' %}
+        </div>
+    </div>
+
+    <!-- Report Container -->
+    <div class="list-container">
+        <!-- Report Header Section -->
+        <div class="section-container">
+            <div class="section-header text-center">
+                <h5>{{ company_name }}</h5>
+                <p class="mb-1">Trial Balance</p>
+                <p class="mb-0 text-muted">As of: {% now "F d, Y" %}</p>
+            </div>
+        </div>
+
+        <!-- Report Data Section -->
+        <div class="section-container">
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-professional mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Account Code</th>
+                                <th style="width: 45%">Account Name</th>
+                                <th class="text-end" style="width: 20%">Debit Balance</th>
+                                <th class="text-end" style="width: 20%">Credit Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in report_lines %}
+                            <tr>
+                                <td class="text-muted">{{ line.code }}</td>
+                                <td>{{ line.name }}</td>
+                                <td class="text-end">
+                                    {% if line.debit > 0 %}
+                                        {{ currency_symbol }}{{ line.debit|floatformat:2 }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if line.credit > 0 %}
+                                        {{ currency_symbol }}{{ line.credit|floatformat:2 }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    No account data available for the trial balance.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-totals">
+                            <tr>
+                                <td colspan="2" class="text-end total-label">Total:</td>
+                                <td class="text-end total-amount">{{ currency_symbol }}{{ total_debits|floatformat:2 }}</td>
+                                <td class="text-end total-amount">{{ currency_symbol }}{{ total_credits|floatformat:2 }}</td>
+                            </tr>
+                            {% if total_debits != total_credits %}
+                            <tr class="table-warning">
+                                <td colspan="2" class="text-end">Difference:</td>
+                                <td colspan="2" class="text-end text-danger">
+                                    {{ currency_symbol }}{{ difference|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Status Section -->
+        <div class="section-container">
+            <div class="section-body">
+                <div class="balance-status text-center">
+                    {% if total_debits == total_credits %}
+                        <div class="status-balanced">
+                            <h6 class="text-success mb-2">Books are in Balance</h6>
+                            <p class="text-muted mb-0">Total debits equal total credits</p>
+                        </div>
+                    {% else %}
+                        <div class="status-unbalanced">
+                            <h6 class="text-danger mb-2">Books are Out of Balance</h6>
+                            <p class="text-muted mb-0">Please review journal entries for errors</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for proper difference calculation -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate and display the correct difference
+    const totalDebits = {{ total_debits|default:0 }};
+    const totalCredits = {{ total_credits|default:0 }};
+    const difference = Math.abs(totalDebits - totalCredits);
+    
+    // Update difference display if books are out of balance
+    const differenceCell = document.querySelector('tr.table-warning td:last-child');
+    if (differenceCell && difference > 0) {
+        const currencySymbol = '{{ currency_symbol|default:"₦" }}';
+        differenceCell.textContent = currencySymbol + difference.toFixed(2);
+    }
+});
+
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/reports/';
+    }
+}
+</script>
+
+<!-- Additional Styles for Trial Balance -->
+<style>
+.table-professional {
+    font-size: 14px;
+    border-collapse: collapse;
+}
+
+.table-professional th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-professional td {
+    border: 1px solid #dee2e6;
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+.table-totals {
+    background: #f8f9fa;
+    border-top: 2px solid #495057;
+}
+
+.total-label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.total-amount {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.balance-status {
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.status-balanced h6 {
+    color: #28a745 !important;
+}
+
+.status-unbalanced h6 {
+    color: #dc3545 !important;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

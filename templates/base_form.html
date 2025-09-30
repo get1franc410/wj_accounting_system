@@ -1,0 +1,75 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\base_form.html -->
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-auto" style="min-width: 600px; max-width: 1200px;">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ page_title }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="smart-form">
+                        {% csrf_token %}
+                        
+                        <!-- Auto-grouped form sections -->
+                        <div class="form-sections">
+                            {% for section in form_sections %}
+                            <div class="form-section mb-4">
+                                <h6 class="section-title">{{ section.title }}</h6>
+                                <div class="row">
+                                    {% for field in section.fields %}
+                                    <div class="col-md-{{ field.col_size|default:6 }}">
+                                        <div class="mb-3">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.help_text %}
+                                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                                            {% endif %}
+                                            {% if field.errors %}
+                                            <div class="text-danger">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="form-actions d-flex justify-content-between">
+                            <a href="{{ cancel_url }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.smart-form {
+    width: 100%;
+}
+
+.form-section {
+    border-left: 3px solid var(--bs-primary);
+    padding-left: 15px;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    color: var(--bs-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+    .col-md-6, .col-md-4, .col-md-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+</style>

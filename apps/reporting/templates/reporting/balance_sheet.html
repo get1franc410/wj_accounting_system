@@ -1,0 +1,376 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\reporting\templates\reporting\balance_sheet.html -->
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}Balance Sheet{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>Balance Sheet</h2>
+            <p>View assets, liabilities, and equity at a specific point in time</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+            {% include 'components/export_buttons.html' with export_url='reporting:export-balance-sheet' %}
+        </div>
+    </div>
+
+    <!-- Report Container -->
+    <div class="list-container">
+        <!-- Report Header Section -->
+        <div class="section-container">
+            <div class="section-header text-center">
+                <h5>{{ company_name }}</h5>
+                <p class="mb-1">Balance Sheet</p>
+                <p class="mb-0 text-muted">As of: {% now "F d, Y" %}</p>
+            </div>
+        </div>
+
+        <!-- Assets Section -->
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Assets</h6>
+            </div>
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-professional mb-0">
+                        <tbody>
+                            {% for item in asset_lines %}
+                            <tr>
+                                <td style="width: 15%" class="text-muted">{{ item.code|default:"-" }}</td>
+                                <td style="width: 65%">{{ item.name }}</td>
+                                <td class="text-end" style="width: 20%">
+                                    {{ currency_symbol }}{{ item.balance|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-3 text-muted">
+                                    No assets recorded.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-subtotals">
+                            <tr>
+                                <td colspan="2" class="text-end subtotal-label">Total Assets:</td>
+                                <td class="text-end subtotal-amount">
+                                    {{ currency_symbol }}{{ total_assets|floatformat:2 }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liabilities Section -->
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Liabilities</h6>
+            </div>
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-professional mb-0">
+                        <tbody>
+                            {% for item in liability_lines %}
+                            <tr>
+                                <td style="width: 15%" class="text-muted">{{ item.code|default:"-" }}</td>
+                                <td style="width: 65%">{{ item.name }}</td>
+                                <td class="text-end" style="width: 20%">
+                                    {{ currency_symbol }}{{ item.balance|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-3 text-muted">
+                                    No liabilities recorded.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-subtotals">
+                            <tr>
+                                <td colspan="2" class="text-end subtotal-label">Total Liabilities:</td>
+                                <td class="text-end subtotal-amount">
+                                    {{ currency_symbol }}{{ total_liabilities|floatformat:2 }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equity Section -->
+        <div class="section-container">
+            <div class="section-header">
+                <h6>Owner's Equity</h6>
+            </div>
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-professional mb-0">
+                        <tbody>
+                            {% for item in equity_lines %}
+                            <tr>
+                                <td style="width: 15%" class="text-muted">{{ item.code|default:"-" }}</td>
+                                <td style="width: 65%">{{ item.name }}</td>
+                                <td class="text-end" style="width: 20%">
+                                    {{ currency_symbol }}{{ item.balance|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if retained_earnings %}
+                            <tr>
+                                <td style="width: 15%" class="text-muted">-</td>
+                                <td style="width: 65%">Retained Earnings</td>
+                                <td class="text-end" style="width: 20%">
+                                    {{ currency_symbol }}{{ retained_earnings|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if not equity_lines and not retained_earnings %}
+                            <tr>
+                                <td colspan="3" class="text-center py-3 text-muted">
+                                    No equity recorded.
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="table-subtotals">
+                            <tr>
+                                <td colspan="2" class="text-end subtotal-label">Total Owner's Equity:</td>
+                                <td class="text-end subtotal-amount">
+                                    {{ currency_symbol }}{{ total_equity|floatformat:2 }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Liabilities and Equity Section -->
+        <div class="section-container">
+            <div class="section-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-professional mb-0">
+                        <tfoot class="table-totals">
+                            <tr class="balance-equation-row">
+                                <td colspan="2" class="text-end balance-equation-label">
+                                    Total Liabilities and Owner's Equity:
+                                </td>
+                                <td class="text-end balance-equation-amount">
+                                    {{ currency_symbol }}{{ total_liabilities_and_equity|floatformat:2 }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Verification Section -->
+        <div class="section-container">
+            <div class="section-body">
+                <div class="balance-verification text-center">
+                    {% with difference=total_assets|sub:total_liabilities_and_equity %}
+                        {% if difference|abs_value < 0.01 %}
+                            <div class="status-balanced">
+                                <h6 class="text-success mb-2">✅ Balance Sheet is Balanced</h6>
+                                <p class="text-muted mb-0">Assets = Liabilities + Owner's Equity</p>
+                                <small class="text-muted">
+                                    {{ currency_symbol }}{{ total_assets|floatformat:2 }} = 
+                                    {{ currency_symbol }}{{ total_liabilities|floatformat:2 }} + 
+                                    {{ currency_symbol }}{{ total_equity|floatformat:2 }}
+                                </small>
+                            </div>
+                        {% else %}
+                            <div class="status-unbalanced">
+                                <h6 class="text-danger mb-2">⚠️ Balance Sheet is Out of Balance</h6>
+                                <p class="text-muted mb-0">Assets do not equal Liabilities + Owner's Equity</p>
+                                <small class="text-danger">
+                                    Difference: {{ currency_symbol }}{{ difference|floatformat:2 }}
+                                </small>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/reports/';
+    }
+}
+
+// Calculate and display balance verification
+document.addEventListener('DOMContentLoaded', function() {
+    const totalAssets = {{ total_assets|default:0 }};
+    const totalLiabilitiesAndEquity = {{ total_liabilities_and_equity|default:0 }};
+    const difference = totalAssets - totalLiabilitiesAndEquity; // FIXED: Remove Math.abs()
+    
+    // Update difference display if out of balance
+    const differenceElement = document.querySelector('.status-unbalanced small.text-danger');
+    if (differenceElement && Math.abs(difference) > 0.01) { // Allow for small rounding differences
+        const currencySymbol = '{{ currency_symbol|default:"₦" }}';
+        differenceElement.textContent = `Difference: ${currencySymbol}${difference.toFixed(2)}`;
+    }
+});
+</script>
+
+<!-- Additional Styles for Balance Sheet -->
+<style>
+.table-professional {
+    font-size: 14px;
+    border-collapse: collapse;
+}
+
+.table-professional th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-professional td {
+    border: 1px solid #dee2e6;
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+.table-subtotals {
+    background: #f8f9fa;
+    border-top: 1px solid #495057;
+}
+
+.subtotal-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.subtotal-amount {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.table-totals {
+    background: #e9ecef;
+    border-top: 2px solid #495057;
+}
+
+.balance-equation-row {
+    border-top: 3px double #2c3e50;
+}
+
+.balance-equation-label {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.balance-equation-amount {
+    font-weight: 800;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.balance-verification {
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+}
+
+.status-balanced h6 {
+    color: #28a745 !important;
+}
+
+.status-unbalanced h6 {
+    color: #dc3545 !important;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Section spacing */
+.section-container + .section-container {
+    margin-top: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .table-professional td,
+    .table-professional th {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .balance-equation-label {
+        font-size: 14px;
+    }
+    
+    .balance-equation-amount {
+        font-size: 16px;
+    }
+    
+    .balance-verification small {
+        font-size: 11px;
+        display: block;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .page-header,
+    .header-actions {
+        display: none;
+    }
+    
+    .section-container {
+        break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+    
+    .table-professional {
+        font-size: 12px;
+    }
+    
+    .balance-verification {
+        border: 1px solid #000;
+    }
+}
+</style>
+{% endblock %}

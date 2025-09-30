@@ -1,0 +1,63 @@
+/* C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\static\assets\css\dropdown-search.css */
+/* Dropdown Search Filter Styling */
+.dropdown-filter-container {
+    padding: 8px;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.dropdown-filter-input {
+    width: 100%;
+    padding: 6px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 0 !important;
+    font-size: 14px;
+}
+
+.dropdown-scroll-container {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.dropdown-filter-wrapper {
+    position: relative;
+}
+
+.no-results-message {
+    padding: 8px;
+    color: #6c757d;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Smart Search Styling */
+.smart-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.smart-search-option {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+}
+
+.smart-search-option:hover {
+    background-color: #e3f2fd !important;
+}
+
+.smart-search-loading, 
+.smart-search-no-results {
+    padding: 12px;
+    text-align: center;
+    color: #6c757d;
+}

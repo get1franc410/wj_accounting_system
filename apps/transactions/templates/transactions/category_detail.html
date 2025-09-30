@@ -1,0 +1,155 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\transactions\templates\transactions\category_detail.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ category.name }} - Category Details{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>{{ category.name }}</h2>
+            <p>Transaction category details and configuration</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'transactions:category_update' category.pk %}" class="btn btn-edit">
+                Edit Category
+            </a>
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Category Information -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>Category Information</h6>
+                    </div>
+                    <div class="section-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="info-item">
+                                    <label>Category Name:</label>
+                                    <span>{{ category.name }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="info-item">
+                                    <label>Account Type:</label>
+                                    <span class="status-indicator status-info">{{ category.account_type.get_category_display }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="info-item">
+                                    <label>Status:</label>
+                                    {% if category.is_active %}
+                                        <span class="status-indicator status-success">Active</span>
+                                    {% else %}
+                                        <span class="status-indicator status-danger">Inactive</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <div class="info-item">
+                                    <label>Default Account:</label>
+                                    {% if category.default_account %}
+                                        <span>{{ category.default_account.account_number }} - {{ category.default_account.name }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No default account configured</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="info-item">
+                                    <label>Created:</label>
+                                    <span>{{ category.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if category.description %}
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="info-item">
+                                    <label>Description:</label>
+                                    <span>{{ category.description }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Type Compatibility -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>Compatible Transaction Types</h6>
+                    </div>
+                    <div class="section-body">
+                        {% if category.allowed_transaction_types %}
+                            <div class="row">
+                                {% for transaction_type in category.get_compatible_transaction_types %}
+                                    <div class="col-md-4 mb-2">
+                                        <span class="status-indicator status-secondary">{{ transaction_type }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No transaction types configured for this category.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Usage Statistics -->
+            <div class="list-container">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h6>Usage Statistics</h6>
+                    </div>
+                    <div class="section-body">
+                        <div class="info-item">
+                            <label>Total Transactions:</label>
+                            <span class="fw-bold text-primary">{{ category.transactions.count }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>This Month:</label>
+                            <span class="fw-bold text-success">{{ monthly_count }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Last Used:</label>
+                            {% if last_used %}
+                                <span>{{ last_used|date:"M d, Y" }}</span>
+                            {% else %}
+                                <span class="text-muted">Never used</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/transactions/categories/';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,467 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\templates\base.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>{% block title %}WJ-Accounting System{% endblock %}</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+  <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
+  
+  <!-- Main CSS File -->
+  <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/css/professional-forms.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/css/smart-search.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/css/dropdown-search.css' %}" rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <style>
+    /* 🖼️ BACKGROUND IMAGE SETUP */
+    body {
+      background-image: url("{% static 'assets/img/wj_whitebackground.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* 🎨 BACKGROUND OVERLAY FOR BETTER READABILITY */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.85);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* 🔧 ENSURE PROPER LAYOUT STRUCTURE */
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #main {
+      flex: 1 0 auto;
+    }
+
+    #footer {
+      flex-shrink: 0;
+      margin-top: auto;
+    }
+
+    .btn-professional {
+      border-radius: 6px;
+      font-weight: 500;
+      padding: 8px 16px;
+      transition: all 0.2s ease;
+    }
+    .card-professional {
+      border: 1px solid #e3e6f0;
+      border-radius: 8px;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+    }
+    .table-professional {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .table-professional th {
+      background-color: #f8f9fc;
+      border-bottom: 2px solid #e3e6f0;
+      font-weight: 600;
+      color: #5a5c69;
+    }
+    .badge-professional {
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+
+    /* 🎨 MINIMAL FLOATING LOGO STYLES - SHARP & CLEAN */
+    .logo-floating {
+      position: relative;
+      display: inline-block;
+      transition: all 0.2s ease;
+    }
+
+    .logo-floating h1 {
+      margin: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .logo-floating h1 a {
+      color: #ffffff !important;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.8rem;
+      /* 🔧 SHARP, CLEAR TEXT SHADOWS */
+      text-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.8),
+        0 2px 4px rgba(0, 0, 0, 0.6);
+      transition: all 0.2s ease;
+      display: inline-block;
+      letter-spacing: 0.5px;
+      /* 🔧 CRISP TEXT RENDERING */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* 🎭 SUBTLE FLOATING ANIMATION */
+    .logo-floating {
+      animation: gentleFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes gentleFloat {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-2px);
+      }
+    }
+
+    /* 🌟 MINIMAL HOVER EFFECT */
+    .logo-floating:hover h1 a {
+      transform: scale(1.005);
+      text-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.9),
+        0 2px 6px rgba(0, 0, 0, 0.7),
+        0 0 15px rgba(255, 255, 255, 0.1);
+    }
+
+    /* 📱 MOBILE RESPONSIVENESS */
+    @media (max-width: 768px) {
+      .logo-floating h1 a {
+        font-size: 1.4rem;
+      }
+      
+      body {
+        background-attachment: scroll;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .logo-floating h1 a {
+        font-size: 1.2rem;
+        letter-spacing: 0.2px;
+      }
+    }
+
+    /* 🔧 CONTENT CARDS WITH BACKGROUND TRANSPARENCY */
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .alert {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    /* 🦶 FOOTER STYLING */
+    #footer {
+      background: rgba(0, 0, 0, 0.8);
+      color: #ffffff;
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #footer .copyright {
+      color: #e9ecef;
+    }
+
+    #footer .credits {
+      color: #adb5bd;
+    }
+
+    #footer .credits a {
+      color: #ffffff;
+      text-decoration: none;
+    }
+
+    #footer .credits a:hover {
+      color: #f8f9fa;
+    }
+  </style>
+  
+  <style>
+  .card-body.border-bottom {
+      background-color: rgba(248, 249, 250, 0.95);
+  }
+
+  .form-label {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.5rem;
+  }
+
+  .btn {
+      border-radius: 0.375rem;
+      font-weight: 500;
+  }
+
+  .btn-primary {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+  }
+
+  .btn-outline-secondary {
+      color: #6c757d;
+      border-color: #6c757d;
+  }
+
+  .btn-outline-secondary:hover {
+      background-color: #6c757d;
+      border-color: #6c757d;
+  }
+
+  /* Responsive improvements */
+  @media (max-width: 768px) {
+      .col-md-6 .d-flex {
+          flex-direction: column;
+          gap: 0.5rem;
+      }
+      
+      .col-md-6 .ms-auto {
+          margin-left: 0 !important;
+          margin-top: 0.5rem;
+      }
+  }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <header id="header" class="d-flex align-items-center">
+    <div class="container d-flex align-items-center justify-content-between">
+
+      <!-- 🎨 CLEAN MINIMAL LOGO -->
+      <div class="logo logo-floating">
+        <h1><a href="{% url 'dashboard:home' %}">WJ-Accounting System</a></h1>
+      </div>
+
+      <nav id="navbar" class="navbar">
+          <ul>
+              {% if user.is_authenticated %}
+                  <li><a class="nav-link scrollto {% if request.resolver_match.view_name == 'dashboard:home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Dashboard</a></li>
+                  
+                  <li class="dropdown"><a href="#"><span>Transactions</span> <i class="bi bi-chevron-down"></i></a>
+                      <ul>
+                          <li><a href="{% url 'transactions:transaction_list' %}">All Transactions</a></li>
+                          <li><a href="{% url 'transactions:transaction_create' %}">New Transaction</a></li>
+                          <li><a href="{% url 'journal:journal-entry-list' %}">Journal Entries</a></li>
+                      </ul>
+                  </li>
+
+                  <!-- 🆕 NEW: DEDICATED INVENTORY MENU -->
+                  <li class="dropdown"><a href="#"><span>Inventory</span> <i class="bi bi-chevron-down"></i></a>
+                      <ul>
+                          <li><a href="{% url 'inventory:item_list' %}"><i class="bi bi-box"></i> Inventory Items</a></li>
+                          {% if user.user_type == 'ADMIN' or user.user_type == 'ACCOUNTANT' or user.user_type == 'STOCK_KEEPER' %}
+                              <li><a href="{% url 'inventory:transaction_create' %}"><i class="bi bi-arrow-up-down"></i> New Stock Transaction</a></li>
+                              <li><a href="{% url 'inventory:movement_create' %}"><i class="bi bi-arrow-left-right"></i> Stock Movement/Adjustment</a></li>
+                              <li><hr class="dropdown-divider"></li>
+                              <li><a href="{% url 'inventory:movement_list' %}"><i class="bi bi-list-check"></i> Movement History</a></li>
+                          {% endif %}
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a href="{% url 'inventory:export-items' %}?format=excel"><i class="bi bi-download"></i> Export Items</a></li>
+                          <li><a href="{% url 'inventory:export-valuation' %}?format=pdf"><i class="bi bi-file-earmark-pdf"></i> Valuation Report</a></li>
+                      </ul>
+                  </li>
+
+                  <li class="dropdown"><a href="#"><span>Manage</span> <i class="bi bi-chevron-down"></i></a>
+                      <ul>
+                          <li><a href="{% url 'accounts:chart-of-accounts' %}">Chart of Accounts</a></li>
+                          <li><a href="{% url 'customers:customer-list' %}">Customers & Vendors</a></li>
+                          <li><a href="{% url 'assets:asset-list' %}">Fixed Assets</a></li>
+                      </ul>
+                  </li>
+
+                  <li class="dropdown"><a href="#"><span>Reports</span> <i class="bi bi-chevron-down"></i></a>
+                      <ul>
+                          <li><a href="{% url 'reporting:trial-balance' %}">Trial Balance</a></li>
+                          <li><a href="{% url 'reporting:income-statement' %}">Income Statement</a></li>
+                          <li><a href="{% url 'reporting:balance-sheet' %}">Balance Sheet</a></li>
+                          <li><a href="{% url 'reporting:general-ledger' %}">General Ledger</a></li>
+                      </ul>
+                  </li>
+
+                  <li class="dropdown"><a href="#"><span>{{ user.username }}</span> <i class="bi bi-chevron-down"></i></a>
+    <ul>
+        <!-- Settings Dashboard - Available to All Users -->
+        <li><a href="{% url 'core:settings_dashboard' %}"><i class="bi bi-gear"></i> Settings</a></li>
+        
+        <!-- Subscription Management - Available to All Users -->
+        <li><a href="{% url 'subscriptions:status' %}"><i class="bi bi-shield-check"></i> My Subscription</a></li>
+        
+        {% if user.user_type == 'ADMIN' %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a href="{% url 'core:admin_settings' %}"><i class="bi bi-shield-lock"></i> Admin Control Panel</a></li>
+            <li><a href="{% url 'core:user_management' %}"><i class="bi bi-people"></i> User Management</a></li>
+            <li><a href="{% url 'transactions:category_list' %}"><i class="bi bi-tags"></i> Transaction Categories</a></li>
+        {% endif %}
+        
+        {% if user.user_type in 'ADMIN,ACCOUNTANT' %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a href="{% url 'backup:settings' %}"><i class="bi bi-cloud-arrow-up"></i> Backup Settings</a></li>
+            <li><a href="{% url 'backup:history' %}"><i class="bi bi-clock-history"></i> Backup History</a></li>
+        {% endif %}
+        
+        <li><hr class="dropdown-divider"></li>
+        <li><a href="{% url 'core:user_profile' %}"><i class="bi bi-person"></i> My Profile</a></li>
+        <li><a href="{% url 'auth:change_password' %}"><i class="bi bi-key"></i> Change Password</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a href="{% url 'auth:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+    </ul>
+</li>
+{% else %}
+    <li><a class="nav-link scrollto" href="{% url 'auth:login' %}">Login</a></li>
+    <li><a class="getstarted scrollto" href="{% url 'subscriptions:register' %}">Register</a></li>
+{% endif %}
+          </ul>
+          <i class="bi bi-list mobile-nav-toggle"></i>
+      </nav>
+
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </section>
+  </main>
+
+  <!-- 🦶 FIXED FOOTER - NOW PROPERLY VISIBLE -->
+  <footer id="footer">
+    <div class="container d-lg-flex py-4">
+      <div class="me-lg-auto text-center text-lg-start">
+        <div class="copyright">
+          &copy; Copyright <strong><span>WJ-Accounting System</span></strong>. All Rights Reserved
+        </div>
+        <div class="credits">
+          Designed with ❤️ by <a href="#">WJ Development Team</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Vendor JS Files -->
+  <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/js/main.js' %}"></script>
+  <script src="{% static 'assets/js/smart_search.js' %}"></script>
+  <script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+
+  <!-- Back Navigation Script -->
+  <script>
+  function goBack() {
+      if (document.referrer && document.referrer !== window.location.href) {
+          window.history.back();
+      } else {
+          window.location.href = '{% url "dashboard:home" %}';
+      }
+  }
+  </script>
+  
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Initialize all dropdown filters with data-filter attribute
+      initializeAllDropdownFilters();
+      
+      // Initialize all smart search fields
+      initializeAllSmartSearchFields();
+  });
+
+      $('select[data-filter="true"], .dropdown[data-filter="true"]').dropdownFilter({
+            filterPlaceholder: 'Search...',
+            noResultsText: 'No matching items found',
+            maxHeight: '250px'
+  });
+
+  function initializeAllDropdownFilters() {
+      // For regular select elements that need filtering
+      const filterSelects = document.querySelectorAll('select[data-filter="true"]');
+      
+      filterSelects.forEach(select => {
+          if (window.jQuery && window.jQuery.fn.dropdownFilter) {
+              jQuery(select).dropdownFilter({
+                  filterPlaceholder: select.dataset.placeholder || 'Search...',
+                  noResultsText: 'No matching items found',
+                  maxHeight: '250px'
+              });
+          } else {
+              console.warn('jQuery or dropdownFilter plugin not loaded');
+          }
+      });
+      
+      // For dropdown containers with data-filter attribute
+      if (window.jQuery) {
+          jQuery('.dropdown[data-filter="true"]').dropdownFilter({
+              filterPlaceholder: 'Search...',
+              noResultsText: 'No matching items found',
+              maxHeight: '250px'
+          });
+      }
+  }
+
+  function initializeAllSmartSearchFields() {
+      // For API-based smart search fields
+      const smartSearchInputs = document.querySelectorAll('.smart-search-input');
+      
+      smartSearchInputs.forEach(input => {
+          if (window.SmartSearch && input.dataset.url) {
+              new SmartSearch(input, input.dataset.url, {
+                  placeholder: input.dataset.placeholder || 'Search...',
+                  allowCreate: input.dataset.allowCreate === 'true',
+                  createUrl: input.dataset.createUrl || null
+              });
+          }
+      });
+  }
+  </script>
+  
+  {% block scripts %}{% endblock %}
+
+</body>
+</html>

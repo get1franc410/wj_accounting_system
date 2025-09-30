@@ -1,0 +1,348 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\transactions\templates\transactions\category_form.html -->
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/professional-forms.css' %}" rel="stylesheet">
+<link href="{% static 'assets/css/smart-search.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header with Back Button -->
+    <div class="page-header">
+        <div>
+            <h2>{{ page_title }}</h2>
+            <p>Configure transaction categories for your accounting system</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-back" onclick="goBack()">
+                ← Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="form-container">
+        <form method="post" id="category-form">
+            {% csrf_token %}
+            
+            <!-- Basic Information Section -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h5>Basic Information</h5>
+                </div>
+                <div class="section-body">
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label class="form-label">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">{{ form.account_type.label }}</label>
+                            <div class="dropdown" data-filter="true">
+                                {{ form.account_type }}
+                            </div>
+                            {% if form.account_type.help_text %}
+                                <small class="text-muted">{{ form.account_type.help_text }}</small>
+                            {% endif %}
+                            {% if form.account_type.errors %}
+                                <div class="text-danger">{{ form.account_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Configuration Section -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h5>Account Configuration</h5>
+                </div>
+                <div class="section-body">
+                    <div class="form-group">
+                        <label for="default-account-search" class="form-label">
+                            {{ form.default_account.label }}
+                        </label>
+                        <div class="account-search-container">
+                            <input type="text" 
+                                   id="default-account-search" 
+                                   name="default_account_display"
+                                   class="form-control smart-search-account"
+                                   placeholder="Search accounts..."
+                                   value="{% if form.default_account.value %}{{ form.default_account.value.account_number }} - {{ form.default_account.value.name }}{% endif %}"
+                                   data-selected-id="{% if form.default_account.value %}{{ form.default_account.value.id }}{% endif %}">
+                            <input type="hidden" 
+                                   name="default_account" 
+                                   id="id_default_account"
+                                   value="{% if form.default_account.value %}{{ form.default_account.value.id }}{% endif %}">
+                        </div>
+                        {% if form.default_account.help_text %}
+                            <small class="text-muted">{{ form.default_account.help_text }}</small>
+                        {% endif %}
+                        {% if form.default_account.errors %}
+                            <div class="text-danger">{{ form.default_account.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Type Compatibility Section -->
+            <div class="section-container">
+                <div class="section-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Transaction Type Compatibility</h5>
+                        <button type="button" class="btn btn-cancel" id="apply-recommendations" style="display: none;">
+                            Apply Recommendations
+                        </button>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.allowed_transaction_types.label }}</label>
+                        {% if form.allowed_transaction_types.help_text %}
+                            <small class="text-muted mb-3 d-block">{{ form.allowed_transaction_types.help_text }}</small>
+                        {% endif %}
+                        
+                        <div class="form-row-3col">
+                            {% for choice in form.allowed_transaction_types %}
+                                <div class="transaction-type-item">
+                                    <div class="form-check">
+                                        {{ choice.tag }}
+                                        <label for="{{ choice.id_for_label }}" class="form-check-label">
+                                            {{ choice.choice_label }}
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.allowed_transaction_types.errors %}
+                            <div class="text-danger">{{ form.allowed_transaction_types.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Smart Recommendations Panel -->
+                    <div id="recommendations-panel" class="alert alert-info mt-3" style="display: none;">
+                        <h6 class="mb-2">Smart Recommendations</h6>
+                        <p id="recommendations-text" class="mb-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-cancel" onclick="goBack()">
+                    Cancel
+                </button>
+                <button class="btn btn-save" type="submit">
+                    Save Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+<script src="{% static 'assets/js/smart_search.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dropdown filters
+    $('.dropdown[data-filter="true"]').dropdownFilter({
+        filterPlaceholder: 'Search account types...',
+        maxHeight: '200px'
+    });
+
+    const accountTypeSelect = document.getElementById('id_account_type');
+    const defaultAccountSearch = document.getElementById('default-account-search');
+    const transactionTypeCheckboxes = document.querySelectorAll('input[name="allowed_transaction_types"]');
+    const recommendationsPanel = document.getElementById('recommendations-panel');
+    const recommendationsText = document.getElementById('recommendations-text');
+    const applyRecommendationsBtn = document.getElementById('apply-recommendations');
+    
+    let currentRecommendations = [];
+
+    // Initialize smart search for accounts
+    if (defaultAccountSearch) {
+        const accountSearch = new SmartSearch(defaultAccountSearch, '/api/accounts/search/', {
+            placeholder: 'Search accounts by number or name...',
+            displayField: 'display_name',
+            allowFreeText: false
+        });
+
+        // Handle account selection
+        defaultAccountSearch.addEventListener('smartselect', function(e) {
+            const selectedAccount = e.detail.item;
+            document.getElementById('id_default_account').value = selectedAccount.id;
+        });
+    }
+
+    // Account type change handler
+    if (accountTypeSelect) {
+        accountTypeSelect.addEventListener('change', function() {
+            const accountTypeId = this.value;
+            
+            if (!accountTypeId) {
+                clearRecommendations();
+                return;
+            }
+            
+            // Fetch recommendations for selected account type
+            fetch(`/transactions/api/accounts-by-type/${accountTypeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                showRecommendations(data.account_category, data.recommended_transaction_types);
+            })
+            .catch(error => {
+                console.error('Error fetching account type data:', error);
+                clearRecommendations();
+            });
+        });
+    }
+
+    // Apply recommendations button
+    if (applyRecommendationsBtn) {
+        applyRecommendationsBtn.addEventListener('click', function() {
+            // Clear all checkboxes first
+            transactionTypeCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Check recommended types
+            currentRecommendations.forEach(type => {
+                const checkbox = document.querySelector(`input[name="allowed_transaction_types"][value="${type}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // Visual feedback
+            this.textContent = 'Applied';
+            this.classList.remove('btn-cancel');
+            this.classList.add('btn-save');
+            
+            setTimeout(() => {
+                this.textContent = 'Apply Recommendations';
+                this.classList.remove('btn-save');
+                this.classList.add('btn-cancel');
+            }, 2000);
+        });
+    }
+
+    function showRecommendations(accountCategory, recommendedTypes) {
+        currentRecommendations = recommendedTypes;
+        
+        // Clear previous highlights
+        transactionTypeCheckboxes.forEach(checkbox => {
+            const container = checkbox.closest('.transaction-type-item');
+            container.classList.remove('recommended-type');
+        });
+
+        // Highlight recommended types
+        const recommendedSet = new Set(recommendedTypes);
+        transactionTypeCheckboxes.forEach(checkbox => {
+            const container = checkbox.closest('.transaction-type-item');
+            if (recommendedSet.has(checkbox.value)) {
+                container.classList.add('recommended-type');
+            }
+        });
+
+        // Show recommendations panel
+        const categoryDisplay = {
+            'ASSET': 'Asset',
+            'LIABILITY': 'Liability', 
+            'EQUITY': 'Equity',
+            'REVENUE': 'Revenue',
+            'EXPENSE': 'Expense'
+        };
+
+        const typeMapping = {
+            'SALE': 'Sale / Invoice',
+            'PURCHASE': 'Purchase / Bill',
+            'EXPENSE': 'Expense',
+            'PAYMENT': 'Payment Receipt',
+            'TRANSFER': 'Transfer',
+            'ADJUSTMENT': 'Adjustment Entry'
+        };
+
+        const recommendedNames = recommendedTypes.map(type => typeMapping[type] || type);
+        
+        recommendationsText.innerHTML = `
+            For <strong>${categoryDisplay[accountCategory] || accountCategory}</strong> accounts, 
+            we recommend: <strong>${recommendedNames.join(', ')}</strong>.
+        `;
+        
+        recommendationsPanel.style.display = 'block';
+        applyRecommendationsBtn.style.display = 'inline-block';
+    }
+
+    function clearRecommendations() {
+        recommendationsPanel.style.display = 'none';
+        applyRecommendationsBtn.style.display = 'none';
+        currentRecommendations = [];
+        transactionTypeCheckboxes.forEach(checkbox => {
+            const container = checkbox.closest('.transaction-type-item');
+            container.classList.remove('recommended-type');
+        });
+    }
+
+    // Auto-trigger on page load if account type is already selected
+    if (accountTypeSelect && accountTypeSelect.value) {
+        accountTypeSelect.dispatchEvent(new Event('change'));
+    }
+});
+
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/transactions/categories/';
+    }
+}
+</script>
+
+<style>
+/* Additional styles for transaction type recommendations */
+.transaction-type-item {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.transaction-type-item:hover {
+    background: #f8f9fa;
+}
+
+.transaction-type-item.recommended-type {
+    background: #e8f5e8;
+    border-color: #28a745;
+    font-weight: 500;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.account-search-container {
+    position: relative;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,621 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\inventory\templates\inventory\inventory_item_list.html -->
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Inventory Items{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">Inventory Items</h2>
+            <p class="text-muted mb-0">Manage your inventory items and stock levels</p>
+        </div>
+        <button type="button" class="btn btn-back" onclick="goBack()">
+            ← Back
+        </button>
+    </div>
+
+    <!-- Main Container with Shadow -->
+    <div class="form-container">
+        <!-- Header Section -->
+        <div class="section-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Inventory Management</h5>
+                <div class="d-flex gap-2">
+                    {% include 'components/export_buttons.html' with export_url='inventory:export-items' %}
+                    <a href="{% url 'inventory:item_create' %}" class="btn btn-save">
+                        Add New Item
+                    </a>
+                    <a href="{% url 'inventory:transaction_create' %}" class="btn btn-secondary-action">
+                        New Transaction
+                    </a>
+                    <a href="{% url 'inventory:movement_create' %}" class="btn btn-secondary-action">
+                        Stock Movement
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search and Filter Section -->
+        <div class="section-body border-bottom">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search_query }}" placeholder="Name, SKU, description...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="item_type" class="form-label">Item Type</label>
+                        <div class="dropdown" data-filter="true">
+                            <select class="form-select" id="item_type" name="item_type">
+                                <option value="">All Types</option>
+                                {% for value, label in item_type_choices %}
+                                    <option value="{{ value }}" {% if selected_item_type == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="stock_status" class="form-label">Stock Status</label>
+                        <div class="dropdown" data-filter="true">
+                            <select class="form-select" id="stock_status" name="stock_status">
+                                <option value="">All Stock</option>
+                                <option value="in_stock" {% if selected_stock_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                                <option value="low_stock" {% if selected_stock_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                                <option value="out_of_stock" {% if selected_stock_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                                <option value="batch_tracked" {% if selected_stock_status == 'batch_tracked' %}selected{% endif %}>Batch Tracked</option>
+                                <option value="expiry_tracked" {% if selected_stock_status == 'expiry_tracked' %}selected{% endif %}>Expiry Tracked</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="w-100">
+                            <button type="submit" class="btn btn-search w-100 mb-2">
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Second row for clear button -->
+                <div class="row mt-2">
+                    <div class="col-md-12 text-end">
+                        <a href="{% url 'inventory:item_list' %}" class="btn btn-cancel">
+                            Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="section-body border-bottom">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Table Section -->
+        <div class="section-body p-0">
+            <div class="table-responsive">
+                <table class="table table-minimal mb-0">
+                    <thead>
+                        <tr>
+                            <th>Item Details</th>
+                            <th>SKU</th>
+                            <th>Type & Features</th>
+                            <th class="text-end">Stock</th>
+                            <th class="text-end">Purchase Price</th>
+                            <th class="text-end">Sale Price</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center" style="min-width: 200px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>
+                                <div class="fw-medium">
+                                    <a href="{{ item.get_absolute_url }}" class="text-decoration-none text-dark">
+                                        {{ item.name }}
+                                    </a>
+                                </div>
+                                {% if item.description %}
+                                    <small class="text-muted">{{ item.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.sku %}
+                                    <span class="badge-minimal">{{ item.sku }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>
+                                    <span class="badge-minimal-info">{{ item.get_item_type_display }}</span>
+                                </div>
+                                <div class="mt-1">
+                                    {% if item.enable_batch_tracking %}
+                                        <span class="badge-minimal-success">Batch</span>
+                                    {% endif %}
+                                    {% if item.track_expiry %}
+                                        <span class="badge-minimal-warning">Expiry</span>
+                                    {% endif %}
+                                    {% if not item.allow_fractional_quantities %}
+                                        <span class="badge-minimal-info">Whole</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="fw-medium">{{ item.quantity_on_hand|floatformat:0 }}</div>
+                                {% if item.unit_of_measurement %}
+                                    <small class="text-muted">{{ item.get_unit_of_measurement_display }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if item.current_average_cost %}
+                                    {{ request.user.company.currency_symbol }}{{ item.current_average_cost|floatformat:2|intcomma }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if item.sale_price %}
+                                    {{ request.user.company.currency_symbol }}{{ item.sale_price|floatformat:2|intcomma }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if item.quantity_on_hand == 0 %}
+                                    <span class="status-badge status-danger">Out of Stock</span>
+                                {% elif item.is_low_on_stock %}
+                                    <span class="status-badge status-warning">Low Stock</span>
+                                {% else %}
+                                    <span class="status-badge status-success">In Stock</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="action-buttons">
+                                    <a href="{{ item.get_absolute_url }}" 
+                                    class="btn btn-action" title="View Details">View</a>
+                                    {% if user.user_type == 'ADMIN' or user.user_type == 'ACCOUNTANT' or user.user_type == 'STOCK_KEEPER' %}
+                                        <a href="{% url 'inventory:item_update' item.pk %}" 
+                                        class="btn btn-action" title="Edit Item">Edit</a>
+                                        <a href="{% url 'inventory:transaction_create' %}?item={{ item.pk }}" 
+                                        class="btn btn-action" title="Stock Transaction">Stock</a>
+                                        <a href="{% url 'inventory:movement_create' %}?item={{ item.pk }}" 
+                                        class="btn btn-action" title="Quick Adjustment">Adjust</a>
+                                        {% if item.enable_batch_tracking %}
+                                            <a href="{% url 'inventory:batch_list' item.pk %}" 
+                                            class="btn btn-action" title="View Batches">Batches</a>
+                                        {% endif %}
+                                        {% if item.costing_method == 'PRICE_ADJ' and user.user_type in 'ADMIN,ACCOUNTANT' %}
+                                            <a href="{% url 'inventory:price_adjustment_create' item.pk %}" 
+                                            class="btn btn-action" title="Price Adjustment">Price Adj</a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="empty-state">
+                                    <p class="text-muted mt-2">
+                                        {% if search_query or selected_item_type or selected_stock_status %}
+                                            No inventory items found matching your criteria.
+                                        {% else %}
+                                            No inventory items found.
+                                        {% endif %}
+                                    </p>
+                                    <a href="{% url 'inventory:item_create' %}" class="btn btn-save">
+                                        Add First Item
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if items.has_other_pages %}
+        <div class="section-footer">
+            <nav aria-label="Inventory pagination">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if items.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ items.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in items.paginator.page_range %}
+                        {% if items.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if items.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ items.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <div class="text-center text-muted mt-2">
+                Showing {{ items.start_index }} to {{ items.end_index }} of {{ items.paginator.count }} items
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Summary Stats -->
+        {% if items %}
+        <div class="section-footer bg-light">
+            <div class="row text-center">
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Total Items</h6>
+                        <span class="fw-bold">{{ total_items }}</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Low Stock</h6>
+                        <span class="fw-bold">{{ low_stock_items }}</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Out of Stock</h6>
+                        <span class="fw-bold">{{ out_of_stock_items }}</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Batch Tracked</h6>
+                        <span class="fw-bold">{{ batch_tracked_items }}</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Expiry Tracked</h6>
+                        <span class="fw-bold">{{ expiry_tracked_items }}</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <h6 class="text-muted mb-1">Total Value</h6>
+                        <span class="fw-bold">{{ request.user.company.currency_symbol }}{{ total_inventory_value|floatformat:2|intcomma }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Load JavaScript Files -->
+<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dropdown filters
+    $('.dropdown[data-filter="true"]').dropdownFilter({
+        filterPlaceholder: 'Search options...',
+        noResultsText: 'No results found',
+        maxHeight: '200px'
+    });
+});
+
+// Utility function for going back
+function goBack() {
+    if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+    } else {
+        window.location.href = '/dashboard/';
+    }
+}
+</script>
+
+<!-- Consistent Styling with Transaction Form -->
+<style>
+/* Container with shadow - same as transaction form */
+.form-container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+/* Form sections - same structure */
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+.section-body.border-bottom {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.section-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Buttons - same color scheme as transaction form */
+.btn {
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+}
+
+.btn-save {
+    background: #343a40;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #23272b;
+    color: white;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+    color: #5a6268;
+}
+
+.btn-search {
+    background: #495057;
+    color: white;
+}
+
+.btn-search:hover {
+    background: #343a40;
+    color: white;
+}
+
+.btn-secondary-action {
+    background: #adb5bd;
+    color: white;
+}
+
+.btn-secondary-action:hover {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-action {
+    background: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    padding: 4px 8px;
+    font-size: 12px;
+    margin: 1px;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.btn-action:hover {
+    background: #e9ecef;
+    color: #343a40;
+    text-decoration: none;
+}
+
+/* Form controls - consistent with transaction form */
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+}
+
+/* Table styling - minimal like transaction form */
+.table-minimal {
+    font-size: 14px;
+    border-collapse: collapse;
+}
+
+.table-minimal th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-minimal td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+/* Badges - minimal styling */
+.badge-minimal {
+    background: #f8f9fa;
+    color: #495057;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+}
+
+.badge-minimal-info {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 6px;
+    font-size: 11px;
+    border: 1px solid #bbdefb;
+}
+
+.badge-minimal-success {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 2px 6px;
+    font-size: 11px;
+    border: 1px solid #c8e6c9;
+}
+
+.badge-minimal-warning {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 2px 6px;
+    font-size: 11px;
+    border: 1px solid #ffcc02;
+}
+
+/* Status badges */
+.status-badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-success {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.status-warning {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 1px solid #ffcc02;
+}
+
+.status-danger {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+/* Action buttons container */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+}
+
+/* Stats styling */
+.stat-item {
+    padding: 8px;
+    border-right: 1px solid #dee2e6;
+}
+
+.stat-item:last-child {
+    border-right: none;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 2rem;
+}
+
+/* Remove all border radius - consistent with transaction form */
+.btn, .form-control, .form-select, .table, .form-container, .section-header, 
+.badge-minimal, .badge-minimal-info, .badge-minimal-success, .badge-minimal-warning,
+.status-badge {
+    border-radius: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 0 -15px;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        width: 100%;
+        margin-bottom: 2px;
+    }
+    
+    .stat-item {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+        padding: 12px;
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+}
+
+/* Dropdown filter styling - consistent */
+.dropdown-filter-container {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.dropdown-scroll-container {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.no-results-message {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 8px;
+}
+</style>
+{% endblock %}
