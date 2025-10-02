@@ -23,6 +23,10 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             
             if user is not None:
+                if not user.is_active:
+                    messages.error(request, 'This account is inactive. Please contact your administrator.')
+                    return render(request, 'authentication/login.html', {'form': form})
+                
                 login(request, user)
                 if user.force_password_change:
                     messages.warning(request, 'You must change your password before you can continue.')

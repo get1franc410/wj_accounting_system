@@ -357,6 +357,13 @@ def user_management(request):
                 user.save()
                 messages.success(request, f"User '{user.username}' created successfully!")
                 return redirect('core:user_management')
+            else:
+                # Pass the invalid form back to the template
+                return render(request, 'core/user_management.html', {
+                    'users': users,
+                    'create_form': form,
+                    'page_title': 'User Management'
+                })
         
         elif form_type == 'update_user':
             user_id = request.POST.get('user_id')
@@ -366,6 +373,14 @@ def user_management(request):
                 form.save()
                 messages.success(request, f"User '{user.username}' updated successfully!")
                 return redirect('core:user_management')
+            else:
+                # Add error handling for update form as well
+                return render(request, 'core/user_management.html', {
+                    'users': users,
+                    'create_form': UserCreationForm(company=request.user.company),
+                    'update_form': form,
+                    'page_title': 'User Management'
+                })
     
     context = {
         'users': users,
