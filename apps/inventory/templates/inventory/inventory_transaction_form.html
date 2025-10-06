@@ -30,11 +30,22 @@
                 </div>
                 <div class="section-body">
                     <div class="row">
+                        <!-- FIX: Replaced crispy field with custom searchable dropdown structure -->
                         <div class="col-md-6 mb-3">
-                            <div class="dropdown" data-filter="true">
-                                {{ form.item|as_crispy_field }}
+                            <label for="item_search" class="form-label requiredField">Item<span class="asteriskField">*</span></label>
+                            <div class="position-relative">
+                                <!-- The text input for searching -->
+                                <input type="text" id="item_search" class="form-control" placeholder="Search items...">
+                                <!-- The original Django form field, which will be hidden -->
+                                {{ form.item }}
+                                <!-- The container for our custom dropdown results -->
+                                <div id="item-dropdown" class="dropdown-menu w-100"></div>
                             </div>
+                            {% if form.item.errors %}
+                                <div class="text-danger">{{ form.item.errors|striptags }}</div>
+                            {% endif %}
                         </div>
+
                         <div class="col-md-3 mb-3">
                             {{ form.transaction_type|as_crispy_field }}
                         </div>
@@ -66,7 +77,8 @@
                             <label class="form-label">Unit Cost ({{ request.user.company.currency_symbol|default:"$" }})</label>
                             <div class="input-group">
                                 <span class="input-group-text">{{ request.user.company.currency_symbol|default:"$" }}</span>
-                                {{ form.unit_cost }}
+                                <input type="number" name="{{ form.unit_cost.html_name }}" id="{{ form.unit_cost.id_for_label }}"
+                                    class="form-control" step="0.01" value="{{ form.unit_cost.value|default:'' }}">
                             </div>
                             <small class="form-text text-muted">Required for purchases</small>
                         </div>
@@ -89,164 +101,198 @@
                 </div>
                 <div class="info-panel-content">
                     <div class="row text-center">
-                        <div class="col-md-3">
-                            <div class="info-item">
-                                <div class="info-label">Current Stock</div>
-                                <div class="info-value" id="current-stock">0</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-item">
-                                <div class="info-label">Unit</div>
-                                <div class="info-value" id="item-unit">-</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-item">
-                                <div class="info-label">Average Cost</div>
-                                <div class="info-value">
-                                    <span class="currency">{{ request.user.company.currency_symbol|default:"$" }}</span>
-                                    <span id="avg-cost">0.00</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-item">
-                                <div class="info-label">Batch Tracking</div>
-                                <div class="info-value">
-                                    <span class="badge" id="batch-tracking-badge">No</span>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="col-md-3"><div class="info-item"><div class="info-label">Current Stock</div><div class="info-value" id="current-stock">0</div></div></div>
+                        <div class="col-md-3"><div class="info-item"><div class="info-label">Unit</div><div class="info-value" id="item-unit">-</div></div></div>
+                        <div class="col-md-3"><div class="info-item"><div class="info-label">Average Cost</div><div class="info-value"><span class="currency">{{ request.user.company.currency_symbol|default:"$" }}</span><span id="avg-cost">0.00</span></div></div></div>
+                        <div class="col-md-3"><div class="info-item"><div class="info-label">Batch Tracking</div><div class="info-value"><span class="badge" id="batch-tracking-badge">No</span></div></div></div>
                     </div>
                 </div>
             </div>
 
             <!-- Notes Section -->
             <div class="form-section mb-4">
-                <div class="section-header">
-                    <h5 class="mb-0">Additional Information</h5>
-                </div>
-                <div class="section-body">
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            {{ form.notes|as_crispy_field }}
-                        </div>
-                    </div>
-                </div>
+                <div class="section-header"><h5 class="mb-0">Additional Information</h5></div>
+                <div class="section-body"><div class="row"><div class="col-12 mb-3">{{ form.notes|as_crispy_field }}</div></div></div>
             </div>
 
             <!-- Action Buttons -->
             <div class="form-actions">
-                <button type="button" class="btn btn-cancel" onclick="goBack()">
-                    Cancel
-                </button>
-                <button class="btn btn-save" type="submit">
-                    Record Transaction
-                </button>
+                <button type="button" class="btn btn-cancel" onclick="goBack()">Cancel</button>
+                <button class="btn btn-save" type="submit">Record Transaction</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Load JavaScript Files -->
-<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
+<!-- Load jQuery (required for AJAX and other scripts) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize dropdown filters
-    $('.dropdown[data-filter="true"]').dropdownFilter({
-        filterPlaceholder: 'Search items...',
-        noResultsText: 'No matching items found',
-        maxHeight: '250px'
-    });
-
-    // Form elements
+    // --- Element Selectors ---
+    const form = document.getElementById('inventory-transaction-form');
+    
+    // Custom Searchable Dropdown Elements
     const itemSelect = document.getElementById('{{ form.item.id_for_label }}');
-    const transactionTypeSelect = document.getElementById('{{ form.transaction_type.id_for_label }}');
-    const quantityInput = document.getElementById('{{ form.quantity.id_for_label }}');
-    const unitCostInput = document.getElementById('{{ form.unit_cost.id_for_label }}');
-    const batchSelect = document.getElementById('{{ form.batch.id_for_label }}');
+    const itemSearch = document.getElementById('item_search');
+    const itemDropdown = document.getElementById('item-dropdown');
+
+    // Other Form Elements
+    const transactionTypeSelect = form.querySelector('[name="transaction_type"]');
+    const quantityInput = form.querySelector('[name="quantity"]');
+    const unitCostInput = form.querySelector('[name="unit_cost"]');
+    const batchSelect = form.querySelector('[name="batch"]');
     const batchSection = document.getElementById('batch-selection');
     const itemInfoPanel = document.getElementById('item-info-panel');
     const totalCostValue = document.getElementById('total-cost-value');
 
-    // Item selection handler
+    // --- Custom Searchable Dropdown Logic (adapted from formula_form.html) ---
+    if (itemSelect && itemSearch) {
+        // 1. Hide the original select element
+        itemSelect.style.display = 'none';
+
+        // 2. Set initial search input value if an item is already selected (e.g., on form error)
+        if (itemSelect.value) {
+            const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+            if (selectedOption) {
+                itemSearch.value = selectedOption.text;
+            }
+        }
+
+        // 3. Function to fetch and display search results
+        const fetchAndShowResults = (url) => {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    itemDropdown.innerHTML = '';
+                    const results = data.results || data; // Handle different API response structures
+
+                    if (!results || results.length === 0) {
+                        const noResults = document.createElement('a');
+                        noResults.className = 'dropdown-item disabled';
+                        noResults.textContent = 'No items found';
+                        itemDropdown.appendChild(noResults);
+                    } else {
+                        results.forEach(item => {
+                            const option = document.createElement('a');
+                            option.className = 'dropdown-item';
+                            option.href = '#';
+                            option.textContent = item.name;
+                            option.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                // Update the hidden select and the visible search input
+                                itemSelect.value = item.id;
+                                itemSearch.value = item.name;
+                                itemDropdown.classList.remove('show');
+
+                                // IMPORTANT: Trigger the 'change' event to run other logic
+                                itemSelect.dispatchEvent(new Event('change'));
+                            });
+                            itemDropdown.appendChild(option);
+                        });
+                    }
+                    itemDropdown.classList.add('show');
+                })
+                .catch(error => console.error('Error searching items:', error));
+        };
+
+        // 4. Event listener for typing in the search box
+        itemSearch.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length < 1) { // Allow searching with 1 character
+                itemDropdown.classList.remove('show');
+                return;
+            }
+            // Using the search API from your reference file
+            fetchAndShowResults(`/inventory/api/items/search/?q=${encodeURIComponent(query)}`);
+        });
+
+        // 5. Event listener to show all items on focus
+        itemSearch.addEventListener('focus', function() {
+            // Using the search API from your reference file to get all items
+            fetchAndShowResults('/inventory/api/items/search/?all=1');
+        });
+
+        // 6. Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!itemSearch.contains(e.target) && !itemDropdown.contains(e.target)) {
+                itemDropdown.classList.remove('show');
+            }
+        });
+    }
+
+    // --- Existing Logic (Total Cost Calculation, Item Details, etc.) ---
+
+    function updateTotalCost() {
+        const quantity = parseFloat(quantityInput?.value) || 0;
+        const unitCost = parseFloat(unitCostInput?.value) || 0;
+        const total = quantity * unitCost;
+        if (totalCostValue) {
+            totalCostValue.textContent = total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    }
+
+    if (form) {
+        form.addEventListener('input', function(event) {
+            if (event.target.name === 'quantity' || event.target.name === 'unit_cost') {
+                updateTotalCost();
+            }
+        });
+    }
+
+    // This event listener is now triggered by the custom dropdown logic
     if (itemSelect) {
         itemSelect.addEventListener('change', function() {
             const itemId = this.value;
             if (itemId) {
-                loadItemDetails(itemId);
+                loadItemDetails(itemId, `/inventory/get_item_details/${itemId}/`);
             } else {
                 hideItemInfo();
             }
         });
     }
 
-    // Real-time total cost calculation
-    function updateTotalCost() {
-        const quantity = parseFloat(quantityInput?.value) || 0;
-        const unitCost = parseFloat(unitCostInput?.value) || 0;
-        const total = quantity * unitCost;
-        
-        if (totalCostValue) {
-            totalCostValue.textContent = total.toFixed(2);
-        }
-    }
-
-    // Event listeners for real-time updates
-    if (quantityInput) quantityInput.addEventListener('input', updateTotalCost);
-    if (unitCostInput) unitCostInput.addEventListener('input', updateTotalCost);
-
-    // Load item details
-    async function loadItemDetails(itemId) {
+    async function loadItemDetails(itemId, url) {
         try {
-            const response = await fetch(`/inventory/ajax/item/${itemId}/`);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
             
             if (data.error) {
                 console.error('Error loading item details:', data.error);
+                hideItemInfo();
                 return;
             }
 
-            // Update item information panel
             updateItemInfoPanel(data);
             
-            // Show/hide batch selection
             if (data.enable_batch_tracking && batchSection) {
                 batchSection.style.display = 'block';
-                await loadBatches(itemId);
+                await loadBatches(itemId, `/inventory/get_batch_details/${itemId}/`);
             } else if (batchSection) {
                 batchSection.style.display = 'none';
             }
             
-            // Set default unit cost
-            if (transactionTypeSelect && unitCostInput && transactionTypeSelect.value === 'PURCHASE') {
-                unitCostInput.value = data.purchase_price || '';
+            if (unitCostInput) {
+                const relevantTypes = ['purchase', 'opening_stock', 'sales_return'];
+                if (transactionTypeSelect && relevantTypes.includes(transactionTypeSelect.value)) {
+                    unitCostInput.value = data.purchase_price || '0.00';
+                }
+                updateTotalCost();
             }
             
             if (itemInfoPanel) itemInfoPanel.style.display = 'block';
-            updateTotalCost();
             
         } catch (error) {
             console.error('Error loading item details:', error);
+            hideItemInfo();
         }
     }
 
-    // Update item information panel
     function updateItemInfoPanel(data) {
-        const elements = {
-            'current-stock': data.quantity_on_hand || '0',
-            'item-unit': data.unit_of_measurement || '-',
-            'avg-cost': data.purchase_price || '0.00'
-        };
-
-        Object.entries(elements).forEach(([id, value]) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value;
-        });
-
-        // Update batch tracking badge
+        document.getElementById('current-stock').textContent = data.quantity_on_hand || '0';
+        document.getElementById('item-unit').textContent = data.unit_of_measurement || '-';
+        document.getElementById('avg-cost').textContent = data.purchase_price || '0.00';
         const batchBadge = document.getElementById('batch-tracking-badge');
         if (batchBadge) {
             batchBadge.textContent = data.enable_batch_tracking ? 'Yes' : 'No';
@@ -254,25 +300,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Load batches
-    async function loadBatches(itemId) {
+    async function loadBatches(itemId, url) {
         try {
-            const response = await fetch(`/inventory/ajax/batches/${itemId}/`);
+            const response = await fetch(url);
             const data = await response.json();
-            
             if (!batchSelect) return;
-            
             batchSelect.innerHTML = '<option value="">Select Batch</option>';
-            
             if (data.batches && data.batches.length > 0) {
                 data.batches.forEach(batch => {
                     const option = document.createElement('option');
                     option.value = batch.id;
-                    option.textContent = batch.display_text;
+                    option.textContent = batch.display_text; 
                     batchSelect.appendChild(option);
                 });
             }
-            
         } catch (error) {
             console.error('Error loading batches:', error);
         }
@@ -282,248 +323,98 @@ document.addEventListener('DOMContentLoaded', function() {
         if (itemInfoPanel) itemInfoPanel.style.display = 'none';
         if (batchSection) batchSection.style.display = 'none';
         if (totalCostValue) totalCostValue.textContent = '0.00';
+        if (unitCostInput) unitCostInput.value = '';
     }
 
-    // Initialize if item is already selected
+    // Initialize on page load if an item is already selected
     if (itemSelect && itemSelect.value) {
-        loadItemDetails(itemSelect.value);
+        loadItemDetails(itemSelect.value, `/inventory/get_item_details/${itemSelect.value}/`);
     }
 });
 
-// Utility function for going back
 function goBack() {
     if (document.referrer && document.referrer !== window.location.href) {
         window.history.back();
     } else {
-        window.location.href = '/inventory/';
+        window.location.href = "{% url 'inventory:item_list' %}";
     }
 }
 </script>
 
-<!-- Consistent Styling with Transaction Form -->
+<!-- Styling -->
 <style>
-/* Container with shadow - same as transaction form */
-.form-container {
-    background: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e0e0e0;
-    padding: 0;
-    margin-bottom: 2rem;
+/* Custom Search Dropdown Styles (from formula_form.html) */
+.position-relative {
+    position: relative !important;
 }
-
-/* Form sections - same structure */
-.form-section {
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.form-section:last-child {
-    border-bottom: none;
-}
-
-.section-header {
-    background: #f8f9fa;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.section-header h5 {
-    color: #2c3e50;
-    font-weight: 600;
-    margin: 0;
-}
-
-.section-body {
-    padding: 1.5rem;
-}
-
-/* Buttons - same color scheme as transaction form */
-.btn {
-    border: none;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-back {
-    background: #6c757d;
-    color: white;
-}
-
-.btn-back:hover {
-    background: #5a6268;
-    color: white;
-}
-
-.btn-save {
-    background: #343a40;
-    color: white;
-}
-
-.btn-save:hover {
-    background: #23272b;
-    color: white;
-}
-
-.btn-cancel {
-    background: #f8f9fa;
-    color: #6c757d;
-    border: 1px solid #dee2e6;
-}
-
-.btn-cancel:hover {
-    background: #e9ecef;
-    color: #5a6268;
-}
-
-/* Form controls - consistent styling */
-.form-control, .form-select {
-    border: 1px solid #ced4da;
-    padding: 8px 12px;
-    font-size: 14px;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #495057;
-    box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
-}
-
-/* Input group styling */
-.input-group-text {
-    background: #f8f9fa;
-    border-color: #ced4da;
-    font-weight: 500;
-}
-
-/* Total cost display */
-.total-cost-display {
-    background: #f8f9fa;
-    border: 1px solid #ced4da;
-    padding: 8px 12px;
-    font-weight: 600;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-}
-
-.currency-symbol {
-    margin-right: 0.25rem;
-    color: #6c757d;
-}
-
-/* Info panel styling */
-.info-panel {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    margin: 1rem 0;
-}
-
-.info-panel-header {
-    background: #e9ecef;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.info-panel-content {
-    padding: 1rem;
-}
-
-.info-item {
-    text-align: center;
-}
-
-.info-label {
-    font-size: 12px;
-    color: #6c757d;
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-}
-
-.info-value {
-    font-size: 14px;
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-/* Badge styling */
-.badge {
-    padding: 4px 8px;
-    font-size: 11px;
-    font-weight: 500;
-}
-
-.badge-enabled {
-    background: #28a745;
-    color: white;
-}
-
-.badge-disabled {
-    background: #6c757d;
-    color: white;
-}
-
-/* Form actions - same as transaction form */
-.form-actions {
-    padding: 1.5rem;
-    background: #f8f9fa;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
-
-/* Remove all border radius - consistent with transaction form */
-.btn, .form-control, .form-select, .form-container, .section-header, .total-cost-display, .info-panel, .badge {
-    border-radius: 0 !important;
-}
-
-/* Dropdown filter styling */
-.dropdown-filter-container {
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.dropdown-scroll-container {
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    position: absolute;
+    z-index: 1050;
+    width: 100%;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.25rem;
     max-height: 250px;
     overflow-y: auto;
 }
-
-.no-results-message {
+.dropdown-menu.show {
+    display: block !important; /* Make it visible */
+}
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: #212529;
+    text-align: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    cursor: pointer;
+}
+.dropdown-item:hover, .dropdown-item:focus {
+    color: #1e2125;
+    background-color: #f8f9fa;
+}
+.dropdown-item.disabled {
     color: #6c757d;
-    font-style: italic;
-    text-align: center;
-    padding: 8px;
+    pointer-events: none;
+    background-color: transparent;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .form-container {
-        margin: 0 -15px;
-    }
-    
-    .section-body {
-        padding: 1rem;
-    }
-    
-    .form-actions {
-        padding: 1rem;
-        flex-direction: column;
-    }
-    
-    .btn {
-        width: 100%;
-        margin-bottom: 8px;
-    }
-    
-    .info-panel-content .row {
-        text-align: left;
-    }
-    
-    .info-item {
-        text-align: left;
-        margin-bottom: 1rem;
-    }
-}
+/* General Form Styling */
+.form-container { background: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border: 1px solid #e0e0e0; padding: 0; margin-bottom: 2rem; }
+.form-section { border-bottom: 1px solid #f0f0f0; }
+.form-section:last-child { border-bottom: none; }
+.section-header { background: #f8f9fa; padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; }
+.section-header h5 { color: #2c3e50; font-weight: 600; margin: 0; }
+.section-body { padding: 1.5rem; }
+.btn { border: none; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+.btn-back { background: #6c757d; color: white; }
+.btn-back:hover { background: #5a6268; color: white; }
+.btn-save { background: #343a40; color: white; }
+.btn-save:hover { background: #23272b; color: white; }
+.btn-cancel { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+.btn-cancel:hover { background: #e9ecef; color: #5a6268; }
+.form-control, .form-select { border: 1px solid #ced4da; padding: 8px 12px; font-size: 14px; }
+.form-control:focus, .form-select:focus { border-color: #495057; box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25); }
+.input-group-text { background: #f8f9fa; border-color: #ced4da; font-weight: 500; }
+.total-cost-display { background: #f8f9fa; border: 1px solid #ced4da; padding: 8px 12px; font-weight: 600; font-size: 14px; display: flex; align-items: center; min-height: 38px; }
+.currency-symbol { margin-right: 0.25rem; color: #6c757d; }
+.info-panel { background: #f8f9fa; border: 1px solid #e9ecef; margin: 1rem 0; }
+.info-panel-header { background: #e9ecef; padding: 0.75rem 1rem; border-bottom: 1px solid #dee2e6; }
+.info-panel-content { padding: 1rem; }
+.info-item { text-align: center; }
+.info-label { font-size: 12px; color: #6c757d; font-weight: 500; margin-bottom: 0.25rem; }
+.info-value { font-size: 14px; font-weight: 600; color: #2c3e50; }
+.badge { padding: 4px 8px; font-size: 11px; font-weight: 500; }
+.badge-enabled { background: #28a745; color: white; }
+.badge-disabled { background: #6c757d; color: white; }
+.form-actions { padding: 1.5rem; background: #f8f9fa; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 12px; }
+.btn, .form-control, .form-select, .form-container, .section-header, .total-cost-display, .info-panel, .badge { border-radius: 0 !important; }
+.asteriskField { color: red; } /* Style for the required field asterisk */
 </style>
 {% endblock %}

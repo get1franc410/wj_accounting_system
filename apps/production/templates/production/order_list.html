@@ -1,0 +1,151 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\production\templates\production\order_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load production_tags %}
+{% load currency_filters %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Production Orders</h2>
+        <div>
+            <a href="{% url 'production:order_create' %}" class="btn btn-save">
+                New Production Order
+            </a>
+        </div>
+    </div>
+    
+    <div class="card card-professional mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search orders..." value="{{ search_query }}">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            Search
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="PLANNED" {% if status_filter == 'PLANNED' %}selected{% endif %}>Planned</option>
+                        <option value="IN_PROGRESS" {% if status_filter == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                        <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                        <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}" placeholder="From">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}" placeholder="To">
+                </div>
+                <div class="col-md-1">
+                    <a href="{% url 'production:order_list' %}" class="btn btn-outline-secondary w-100">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if orders %}
+    <div class="card card-professional">
+        <div class="table-responsive">
+            <table class="table table-hover table-professional mb-0">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Formula</th>
+                        <th>Quantity</th>
+                        <th>Planned Date</th>
+                        <th>Status</th>
+                        <th>Est. Cost</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.order_number }}</td>
+                        <td>{{ order.formula.name }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td>{{ order.planned_date }}</td>
+                        <td>
+                            {% if order.status == 'PLANNED' %}
+                            <span class="badge bg-warning">Planned</span>
+                            {% elif order.status == 'IN_PROGRESS' %}
+                            <span class="badge bg-info">In Progress</span>
+                            {% elif order.status == 'COMPLETED' %}
+                            <span class="badge bg-success">Completed</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ order.estimated_total_cost|currency }}</td>
+                        <td style="text-align: left; padding-left: 15px;">
+                            <div style="display: flex; flex-direction: row; gap: 5px;">
+                                <a href="{% url 'production:order_detail' order.id %}" style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 500; text-align: center; text-decoration: none; border: none; cursor: pointer; min-width: 40px; background-color: #6c757d; color: white;">View</a>
+                                {% if order.status == 'PLANNED' %}
+                                <a href="{% url 'production:order_execute' order.id %}" style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 500; text-align: center; text-decoration: none; border: none; cursor: pointer; min-width: 40px; background-color: #dc3545; color: white;">Execute</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if orders.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if orders.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ orders.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+            </li>
+            {% endif %}
+            
+            {% for i in orders.paginator.page_range %}
+                {% if orders.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}&search={{ search_query }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if orders.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ orders.next_page_number }}&search={{ search_query }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        No production orders found.
+        {% if search_query or status_filter or date_from or date_to %}
+        <a href="{% url 'production:order_list' %}">Clear filters</a>
+        {% else %}
+        <a href="{% url 'production:order_create' %}">Create your first production order</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

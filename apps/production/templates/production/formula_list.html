@@ -1,0 +1,145 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\production\templates\production\formula_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load currency_filters %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Production Formulas</h2>
+        <div>
+            <a href="{% url 'production:formula_create' %}" class="btn btn-dark">
+                New Formula
+            </a>
+        </div>
+    </div>
+    
+    <div class="card card-professional mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search formulas..." value="{{ search_query }}">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            Search
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'production:formula_list' %}" class="btn btn-outline-secondary w-100">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if formulas %}
+    <div class="card card-professional">
+        <div class="table-responsive">
+            <table class="table table-hover table-professional mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Finished Product</th>
+                        <th>Ingredients</th>
+                        <th>Unit Cost</th>
+                        <th>Profit Margin</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for formula in formulas %}
+                    <tr>
+                        <td>{{ formula.name }}</td>
+                        <td>{{ formula.finished_product.name }}</td>
+                        <td>{{ formula.ingredients.count }}</td>
+                        <td>{{ formula.total_cost_per_unit|currency }}</td>
+                        <td>
+                            {% if formula.profit_margin > 0 %}
+                            <span class="badge bg-success">{{ formula.profit_margin|floatformat:1 }}%</span>
+                            {% elif formula.profit_margin < 0 %}
+                            <span class="badge bg-danger">{{ formula.profit_margin|floatformat:1 }}%</span>
+                            {% else %}
+                            <span class="badge bg-secondary">0%</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if formula.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: left; padding-left: 15px;">
+                            <div style="display: flex; flex-direction: row; gap: 5px;">
+                                <a href="{% url 'production:formula_detail' formula.id %}" style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 500; text-align: center; text-decoration: none; border: none; cursor: pointer; min-width: 40px; background-color: #6c757d; color: white;">View</a>
+                                <a href="{% url 'production:formula_update' formula.id %}" style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 500; text-align: center; text-decoration: none; border: none; cursor: pointer; min-width: 40px; background-color: #495057; color: white;">Edit</a>
+                                <a href="{% url 'production:order_create' %}?formula_id={{ formula.id }}" style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 500; text-align: center; text-decoration: none; border: none; cursor: pointer; min-width: 40px; background-color: #343a40; color: white;">Produce</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if formulas.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if formulas.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ formulas.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+            </li>
+            {% endif %}
+            
+            {% for i in formulas.paginator.page_range %}
+                {% if formulas.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}&search={{ search_query }}&status={{ status_filter }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if formulas.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ formulas.next_page_number }}&search={{ search_query }}&status={{ status_filter }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        No production formulas found.
+        {% if search_query %}
+        <a href="{% url 'production:formula_list' %}">Clear search</a>
+        {% else %}
+        <a href="{% url 'production:formula_create' %}">Create your first formula</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -14,6 +14,13 @@ from apps.accounts.models import Account, AccountType
 from apps.customers.models import Customer
 from apps.inventory.models import InventoryItem
 from apps.transactions.models import Transaction
+from apps.subscriptions.utils import has_production_access
+
+try:
+    from apps.production.models import ProductionFormula, ProductionOrder
+except ImportError:
+    ProductionFormula = None
+    ProductionOrder = None
 
 @login_required
 def dashboard_home(request):
@@ -23,6 +30,7 @@ def dashboard_home(request):
     """
     company = request.user.company
     today = timezone.now().date()
+    thirty_days_ago = today - timedelta(days=30)
     
     if not company:
         # Fallback for users without company
@@ -34,8 +42,7 @@ def dashboard_home(request):
             'accounts_payable': Decimal('0.00'),
             'active_customers': 0,
             'inventory_items': 0,
-            'overdue_bills_count': 0,  # Added
-            # 🎯 NO CURRENCY_SYMBOL HERE - Let context processor handle it
+            'overdue_bills_count': 0,
         }
         return render(request, 'dashboard/home.html', context)
     
@@ -108,6 +115,25 @@ def dashboard_home(request):
     
     current_month_expenses = get_period_expenses(company, current_month_start, today)
     last_month_expenses = get_period_expenses(company, last_month_start, current_month_start - timedelta(days=1))
+
+    production_stats = None
+    if has_production_access(request.user) and ProductionFormula is not None:
+        production_stats = {
+            'formulas_count': ProductionFormula.objects.filter(company=company).count(),
+            'planned_orders': ProductionOrder.objects.filter(
+                company=company, 
+                status=ProductionOrder.Status.PLANNED
+            ).count(),
+            'completed_orders': ProductionOrder.objects.filter(
+                company=company,
+                status=ProductionOrder.Status.COMPLETED,
+                completion_date__gte=thirty_days_ago
+            ).count(),
+            'recent_productions': ProductionOrder.objects.filter(
+                company=company,
+                status=ProductionOrder.Status.COMPLETED
+            ).order_by('-completion_date')[:5]
+        }
     
     # --- 🎯 CLEAN CONTEXT - No duplicate currency logic ---
     context = {
@@ -129,7 +155,7 @@ def dashboard_home(request):
         
         # --- Alert Metrics ---
         'overdue_invoices_count': overdue_invoices_count,
-        'overdue_bills_count': overdue_bills_count,  # 🆕 ADDED
+        'overdue_bills_count': overdue_bills_count,
         'low_stock_items_count': low_stock_items_count,
         
         # --- Recent Activity ---
@@ -146,6 +172,9 @@ def dashboard_home(request):
         # --- Quick Stats ---
         'net_income_this_month': current_month_income - current_month_expenses,
         'total_transactions_count': Transaction.objects.filter(company=company).count(),
+        
+        # --- Production Stats ---
+        'production_stats': production_stats,
     }
     
     return render(request, 'dashboard/home.html', context)

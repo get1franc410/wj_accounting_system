@@ -63,6 +63,11 @@
                                     {% for feature in plan.features %}
                                     <li><i class="bi bi-check text-success"></i> {{ feature }}</li>
                                     {% endfor %}
+                                    
+                                    <!-- Add Production Module Feature for Deluxe and Premium Plans -->
+                                    {% if plan.code == 'DELUXE' or plan.code == 'PREMIUM' %}
+                                    <li><i class="bi bi-check text-success"></i> <strong>Production Management Module</strong></li>
+                                    {% endif %}
                                 </ul>
                                 <a href="{% url 'subscriptions:register_form' plan_code=plan.code %}" class="btn btn-dark w-100">Select Plan & Register</a>
                             </div>

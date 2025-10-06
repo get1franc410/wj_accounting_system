@@ -1,0 +1,68 @@
+/* --- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\static\assets\css\action-buttons.css --- */
+
+.btn-save, .btn-create, .btn-execute {
+    background-color: #198754; /* Green */
+    color: white;
+    border: 1px solid #198754;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-save:hover, .btn-create:hover, .btn-execute:hover {
+    background-color: #146c43;
+    border-color: #13653f;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.btn-save:disabled, .btn-execute:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.btn-back, .btn-cancel {
+    background-color: #6c757d; /* Gray */
+    color: white;
+    border: 1px solid #6c757d;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-back:hover, .btn-cancel:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.btn-edit {
+    background-color: #ffc107; /* Yellow */
+    color: #000;
+    border: 1px solid #ffc107;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-edit:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.btn-delete {
+    background-color: #dc3545; /* Red */
+    color: white;
+    border: 1px solid #dc3545;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+    background-color: #b02a37;
+    border-color: #a52834;
+}

@@ -1,0 +1,320 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\production\templates\production\formula_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{{ formula.name }}</h2>
+        <div>
+            <a href="{% url 'production:formula_update' formula.id %}" class="btn btn-secondary">Edit</a>
+            <a href="{% url 'production:order_create' %}?formula_id={{ formula.id }}" class="btn btn-dark">Create Order</a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Formula Details -->
+            <div class="card card-professional mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Formula Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Finished Product</p>
+                            <p class="mb-0 fw-bold">{{ formula.finished_product.name }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Output Quantity</p>
+                            <p class="mb-0 fw-bold">{{ formula.unit_quantity }} {{ formula.finished_product.unit_of_measurement }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Status</p>
+                            <p class="mb-0">
+                                {% if formula.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if formula.description %}
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Description</p>
+                        <p class="mb-0">{{ formula.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Ingredients -->
+            <div class="card card-professional mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Ingredients</h5>
+                    <span class="badge bg-primary">{{ ingredients|length }} items</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-professional mb-0">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Quantity</th>
+                                <th>Available</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ingredient in ingredients %}
+                            <tr>
+                                <td>{{ ingredient.material.name }}</td>
+                                <td>{{ ingredient.quantity }} {{ ingredient.material.unit_of_measurement }}</td>
+                                <td>{{ ingredient.available|floatformat:2 }} {{ ingredient.material.unit_of_measurement }}</td>
+                                <td>
+                                    {% if ingredient.status == 'available' %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Low Stock</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ingredient.notes|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Recent Production Orders -->
+            <div class="card card-professional">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Recent Production Orders</h5>
+                </div>
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-professional mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Date</th>
+                                <th>Quantity</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td>{{ order.order_number }}</td>
+                                <td>{{ order.planned_date }}</td>
+                                <td>{{ order.quantity }}</td>
+                                <td>
+                                    {% if order.status == 'PLANNED' %}
+                                    <span class="badge bg-warning">Planned</span>
+                                    {% elif order.status == 'IN_PROGRESS' %}
+                                    <span class="badge bg-info">In Progress</span>
+                                    {% elif order.status == 'COMPLETED' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: left; padding-left: 15px;">
+                                    <div style="display: flex; flex-direction: row; gap: 5px;">
+                                        <a href="{% url 'production:order_detail' order.id %}" style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 500; text-align: center; text-decoration: none; border: none; cursor: pointer; min-width: 40px; background-color: #6c757d; color: white;">View</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="card-body">
+                    <p class="text-muted mb-0">No production orders found for this formula.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Cost Analysis -->
+            <div class="card card-professional mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Cost Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Material Cost</p>
+                        <p class="mb-0 fw-bold">{{ formula.material_cost|floatformat:2 }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Labor Cost</p>
+                        <p class="mb-0 fw-bold">{{ formula.labor_cost|floatformat:2 }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Overhead Cost</p>
+                        <p class="mb-0 fw-bold">{{ formula.overhead_cost|floatformat:2 }}</p>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Total Cost Per Unit</p>
+                        <p class="mb-0 fw-bold">{{ formula.total_cost_per_unit|floatformat:2 }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Sale Price</p>
+                        <p class="mb-0 fw-bold">{{ formula.finished_product.sale_price|floatformat:2 }}</p>
+                    </div>
+                    <hr>
+                    <div class="mb-0">
+                        <p class="mb-1 text-muted">Profit Margin</p>
+                        <p class="mb-0">
+                            {% if formula.profit_margin > 0 %}
+                            <span class="badge bg-success p-2">{{ formula.profit_margin|floatformat:1 }}% Profit</span>
+                            {% elif formula.profit_margin < 0 %}
+                            <span class="badge bg-danger p-2">{{ formula.profit_margin|floatformat:1 }}% Loss</span>
+                            {% else %}
+                            <span class="badge bg-secondary p-2">0% (Break-even)</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Production Calculator -->
+            <div class="card card-professional">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Production Calculator</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="production-quantity" class="form-label">How many units to produce?</label>
+                        <input type="number" class="form-control" id="production-quantity" min="1" value="1">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-dark w-100" id="calculate-btn">
+                            Calculate Requirements
+                        </button>
+                    </div>
+                    
+                    <div id="calculation-results" style="display: none;">
+                        <h6 class="mb-3">Material Requirements:</h6>
+                        <div id="material-requirements" class="mb-3"></div>
+                        
+                        <h6 class="mb-3">Costs:</h6>
+                        <div id="cost-breakdown" class="mb-3"></div>
+                        
+                        <h6 class="mb-3">Output:</h6>
+                        <div id="output-details" class="mb-3"></div>
+                        
+                        <div class="mt-3">
+                            <a href="#" id="create-order-btn" class="btn btn-dark w-100">
+                                Create Production Order
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="text-muted mt-3 small">
+                        <p class="mb-0">Maximum possible production with current stock: <strong>{{ max_production }}</strong> units</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calculateBtn = document.getElementById('calculate-btn');
+        const productionQuantity = document.getElementById('production-quantity');
+        const calculationResults = document.getElementById('calculation-results');
+        const materialRequirements = document.getElementById('material-requirements');
+        const costBreakdown = document.getElementById('cost-breakdown');
+        const outputDetails = document.getElementById('output-details');
+        const createOrderBtn = document.getElementById('create-order-btn');
+        
+        calculateBtn.addEventListener('click', function() {
+            const quantity = productionQuantity.value;
+            
+            if (!quantity || quantity <= 0) {
+                alert('Please enter a valid quantity');
+                return;
+            }
+            
+            // Fetch calculation from API
+            fetch(`/production/api/calculate-requirements/?formula_id={{ formula.id }}&quantity=${quantity}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Display results
+                    calculationResults.style.display = 'block';
+                    
+                    // Material requirements
+                    materialRequirements.innerHTML = '';
+                    data.requirements.forEach(req => {
+                        const status = req.is_available ? 
+                            '<span class="badge bg-success">Available</span>' : 
+                            `<span class="badge bg-danger">Short by ${req.shortage} ${req.unit}</span>`;
+                        
+                        materialRequirements.innerHTML += `
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>${req.material_name}</div>
+                                <div>${req.required_quantity} ${req.unit} ${status}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    // Cost breakdown
+                    costBreakdown.innerHTML = `
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>Material Cost:</div>
+                            <div>${data.costs.material_cost.toFixed(2)}</div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>Labor Cost:</div>
+                            <div>${data.costs.labor_cost.toFixed(2)}</div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>Overhead Cost:</div>
+                            <div>${data.costs.overhead_cost.toFixed(2)}</div>
+                        </div>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <div>Total Cost:</div>
+                            <div>${data.costs.total_cost.toFixed(2)}</div>
+                        </div>
+                    `;
+                    
+                    // Output details
+                    outputDetails.innerHTML = `
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>${data.output.product_name}:</div>
+                            <div>${data.output.quantity} ${data.output.unit}</div>
+                        </div>
+                    `;
+                    
+                    // Update create order button
+                    createOrderBtn.href = `/production/orders/create/?formula_id={{ formula.id }}&quantity=${quantity}`;
+                    
+                    // Disable create order if materials not available
+                    if (!data.all_available) {
+                        createOrderBtn.classList.add('disabled');
+                        createOrderBtn.innerHTML = 'Insufficient Materials';
+                    } else {
+                        createOrderBtn.classList.remove('disabled');
+                        createOrderBtn.innerHTML = 'Create Production Order';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error calculating requirements:', error);
+                    alert('An error occurred while calculating requirements');
+                });
+        });
+    });
+</script>
+{% endblock %}

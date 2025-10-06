@@ -76,7 +76,6 @@ class AuditorCompanyForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Set help text for auditor-specific fields
         self.fields['name'].help_text = "Name of the external auditing firm"
         self.fields['phone'].help_text = "Primary contact number for the auditing firm"
         self.fields['email'].help_text = "Email address where audit reminders will be sent"
@@ -90,7 +89,7 @@ class UserCompanyForm(forms.ModelForm):
         fields = [
             'name', 'industry', 'registration_number', 'tax_number',
             'address', 'phone', 'email', 'website', 'logo',
-            'currency', 'fiscal_year_start'
+            'currency', 'fiscal_year_start', 'fiscal_closing_grace_period_months'
         ]
         widgets = {
             'address': forms.Textarea(attrs={'rows': 3}),
@@ -101,10 +100,10 @@ class UserCompanyForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Enhanced help text for user company
         self.fields['name'].help_text = "Legal name of your business"
         self.fields['currency'].help_text = "Primary currency for all financial reporting"
-        self.fields['fiscal_year_start'].help_text = "Start date of your fiscal year"
+        self.fields['fiscal_year_start'].help_text = "Start date of your fiscal year. The end date is calculated automatically."
+        self.fields['fiscal_closing_grace_period_months'].help_text = "Months after year-end for accountants to finalize books (e.g., 3)."
         self.fields['tax_number'].help_text = "Tax identification number"
 
 class UserProfileForm(forms.ModelForm):

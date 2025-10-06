@@ -182,8 +182,11 @@ class InventoryTransactionForm(forms.ModelForm):
             'transaction_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'batch': forms.Select(attrs={'class': 'form-select batch-select', 'style': 'display: none;'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control quantity-input', 'step': '0.01'}),
-            # FIX: Added widget for unit_cost to apply consistent styling and ensure JS functionality.
-            'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            
+            # --- DEFINITIVE FIX ---
+            # REMOVE the widget definition for 'unit_cost'.
+            # The template handles the rendering manually to include the currency symbol.
+            # 'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -219,8 +222,9 @@ class InventoryTransactionForm(forms.ModelForm):
             InventoryTransaction.SALES_RETURN
         ]:
             if not unit_cost or unit_cost <= 0:
+                # This validation is correct and should remain
                 raise forms.ValidationError(
-                    f"Unit cost is required for {self.get_transaction_type_display(transaction_type)} transactions"
+                    f"Unit cost is required and must be positive for {self.get_transaction_type_display(transaction_type)} transactions"
                 )
         
         # Validate batch tracking
@@ -251,7 +255,6 @@ class InventoryTransactionForm(forms.ModelForm):
                     if choice_value == transaction_type:
                         return choice_display
         return transaction_type
-
 
 class InventoryBatchForm(forms.ModelForm):
     class Meta:

@@ -29,6 +29,7 @@ urlpatterns = [
     path('assets/', include('apps.assets.urls', namespace='assets')),
     path('backup/', include('apps.backup.urls', namespace='backup')),
     path('subscriptions/', include('apps.subscriptions.urls', namespace='subscriptions')),
+    path('production/', include('apps.production.urls')),
 
     # API URLs
     path('api/customers/search/', customer_api.customer_search_api, name='api_customer_search'),
@@ -36,6 +37,7 @@ urlpatterns = [
     path('api/inventory/items/search/', inventory_api.inventory_search_api, name='api_inventory_search'),
     path('api/inventory/items/<int:item_id>/', inventory_api.inventory_item_detail_api, name='api_inventory_detail'),
     path('api/transactions/search/', transaction_api.transaction_search_api, name='api_transaction_search'),
+
 
     path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'assets/img/favicon.png', permanent=True)),
 ]

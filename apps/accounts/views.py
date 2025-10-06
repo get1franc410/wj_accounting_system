@@ -13,9 +13,11 @@ from django.utils.decorators import method_decorator
 from decimal import Decimal
 from apps.authentication.decorators import user_type_required, RoleRequiredMixin
 from apps.authentication.models import User
-from apps.journal.models import JournalEntryLine
+from apps.journal.models import JournalEntryLine, JournalEntry
 from apps.accounts.models import Account, AccountType
 from apps.accounts.forms import AccountForm
+from django.db import transaction 
+from django.utils import timezone
 
 @login_required
 @user_type_required(allowed_roles=[User.UserType.ADMIN, User.UserType.ACCOUNTANT, User.UserType.MANAGER, User.UserType.VIEWER])
@@ -119,6 +121,118 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
         response = super().form_valid(form)
         messages.success(self.request, f"Account '{self.object.name}' has been deleted.")
         return response
+    
+@login_required
+@user_type_required(allowed_roles=[User.UserType.ADMIN, User.UserType.ACCOUNTANT])
+@transaction.atomic
+def opening_balance_entry(request):
+    """
+    Allows users to input opening balances for their accounts when starting out.
+    This creates a single, balanced journal entry.
+    """
+    company = request.user.company
+    # We need the special "Retained Earnings" account to balance the entry
+    try:
+        retained_earnings_account = Account.objects.get(
+            company=company, 
+            system_account=Account.SystemAccount.RETAINED_EARNINGS
+        )
+    except Account.DoesNotExist:
+        messages.error(request, "A 'Retained Earnings' system account is required. Please set one up in the Chart of Accounts.")
+        return redirect('accounts:chart-of-accounts')
+
+    if request.method == 'POST':
+        entry_date = request.POST.get('entry_date')
+        if not entry_date:
+            messages.error(request, "An 'As of Date' for the opening balances is required.")
+            return redirect('accounts:opening-balance-entry')
+
+        # Delete any previous opening balance entry to prevent duplicates
+        JournalEntry.objects.filter(
+            company=company, 
+            description__startswith='Opening Balance Entry'
+        ).delete()
+
+        # Create the master journal entry
+        journal_entry = JournalEntry.objects.create(
+            company=company,
+            created_by=request.user,
+            date=entry_date,
+            description=f"Opening Balance Entry as of {entry_date}"
+        )
+
+        total_debits = Decimal('0.00')
+        total_credits = Decimal('0.00')
+
+        # Process each account from the form
+        for key, value in request.POST.items():
+            if key.startswith('balance_') and value:
+                account_id = key.split('_')[1]
+                balance = Decimal(value)
+                
+                try:
+                    account = Account.objects.get(id=account_id, company=company)
+                    
+                    # Determine if the balance is a debit or credit
+                    if account.account_type.category in [AccountType.Category.ASSET, AccountType.Category.EXPENSE]:
+                        JournalEntryLine.objects.create(
+                            journal_entry=journal_entry,
+                            account=account,
+                            debit=balance,
+                            credit=0
+                        )
+                        total_debits += balance
+                    else: # Liability, Equity, Revenue
+                        JournalEntryLine.objects.create(
+                            journal_entry=journal_entry,
+                            account=account,
+                            debit=0,
+                            credit=balance
+                        )
+                        total_credits += balance
+                except (Account.DoesNotExist, ValueError):
+                    continue # Ignore invalid data
+
+        # Create the final balancing entry in Retained Earnings
+        balancing_amount = total_debits - total_credits
+        if balancing_amount > 0: # Debits are greater, so credit Retained Earnings
+            JournalEntryLine.objects.create(
+                journal_entry=journal_entry,
+                account=retained_earnings_account,
+                debit=0,
+                credit=balancing_amount
+            )
+        elif balancing_amount < 0: # Credits are greater, so debit Retained Earnings
+            JournalEntryLine.objects.create(
+                journal_entry=journal_entry,
+                account=retained_earnings_account,
+                debit=abs(balancing_amount),
+                credit=0
+            )
+
+        messages.success(request, f"Opening balances saved successfully as Journal Entry #{journal_entry.id}.")
+        return redirect('journal:journal-entry-detail', pk=journal_entry.pk)
+
+    # For GET request, prepare the accounts for the form
+    account_types = AccountType.objects.all()
+    grouped_accounts = {}
+    for acc_type in account_types:
+        # Exclude control accounts as their balances are derived from sub-ledgers
+        accounts_in_group = Account.objects.filter(
+            company=company, 
+            account_type=acc_type,
+            is_control_account=False 
+        ).order_by('account_number')
+        
+        if accounts_in_group.exists():
+            grouped_accounts[acc_type.name] = accounts_in_group
+
+    context = {
+        'grouped_accounts': grouped_accounts,
+        'default_date': timezone.now().date(),
+        'page_title': 'Opening Balance Entry'
+    }
+    return render(request, 'accounts/opening_balance_form.html', context)
 
 def export_chart_of_accounts(request):
     """Export chart of accounts in requested format"""

@@ -90,6 +90,7 @@ class JournalEntryCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     allowed_roles = [User.UserType.ADMIN, User.UserType.ACCOUNTANT]
 
     def get_context_data(self, **kwargs):
+        # ... (this method is unchanged)
         data = super().get_context_data(**kwargs)
         company = self.request.user.company
         
@@ -108,6 +109,7 @@ class JournalEntryCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
 
         return data
 
+
     def form_valid(self, form):
         context = self.get_context_data()
         lines = context['lines']
@@ -116,6 +118,15 @@ class JournalEntryCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
             company = self.request.user.company
             if not company:
                 messages.error(self.request, "Could not identify your company. Please log in again.")
+                return self.form_invalid(form)
+
+            transaction_date = form.cleaned_data.get('date')
+            if company.is_period_closed_for_user(transaction_date, self.request.user):
+                messages.error(
+                    self.request,
+                    f"The financial period for {transaction_date.strftime('%B %Y')} is closed. "
+                    f"Only an Administrator can post entries to this period."
+                )
                 return self.form_invalid(form)
 
             form.instance.company = company
@@ -149,7 +160,7 @@ class JournalEntryCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
                     return self.form_invalid(form)
 
                 if total_debits != total_credits:
-                    messages.error(self.request, f"Transaction is unbalanced. Debits (₦{total_debits}) do not equal Credits (₦{total_credits}).")
+                    messages.error(self.request, f"Transaction is unbalanced. Debits ({total_debits}) do not equal Credits ({total_credits}).")
                     return self.form_invalid(form)
                 
                 if total_debits == 0:

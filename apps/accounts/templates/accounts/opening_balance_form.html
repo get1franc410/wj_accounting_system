@@ -1,0 +1,122 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\accounts\templates\accounts\opening_balance_form.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 text-dark">{{ page_title }}</h2>
+            <p class="text-muted mb-0">Enter the closing balances from your previous system as of a specific date.</p>
+        </div>
+        <a href="{% url 'accounts:chart-of-accounts' %}" class="btn btn-back">
+            ← Back to Chart of Accounts
+        </a>
+    </div>
+
+    <form method="post" class="form-container">
+        {% csrf_token %}
+
+        <!-- Header Section -->
+        <div class="section-header">
+            <h5 class="mb-0">Enter Opening Balances</h5>
+        </div>
+
+        <!-- Date Section -->
+        <div class="section-body border-bottom">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="entry_date" class="form-label required-field">As of Date</label>
+                    <input type="date" name="entry_date" id="entry_date" value="{{ default_date|date:'Y-m-d' }}" class="form-control" required>
+                    <small class="form-text text-muted">Enter the date for which these balances are correct (e.g., your last day on the old system).</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts Section -->
+        <div class="section-body p-0">
+            <div class="table-responsive">
+                <table class="table table-minimal mb-0">
+                    <thead>
+                        <tr>
+                            <th>Account Name</th>
+                            <th class="text-end" style="width: 200px;">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group_name, accounts in grouped_accounts.items %}
+                            <!-- Group Header -->
+                            <tr class="group-header">
+                                <th colspan="2" class="group-title">{{ group_name|upper }}</th>
+                            </tr>
+                            
+                            <!-- Accounts in Group -->
+                            {% for account in accounts %}
+                            <tr>
+                                <td>
+                                    <label for="balance_{{ account.id }}" class="form-label mb-0" style="padding-left: {% if account.parent %}20px{% else %}0px{% endif %};">
+                                        {{ account.account_number }} - <strong>{{ account.name }}</strong>
+                                    </label>
+                                </td>
+                                <td class="text-end">
+                                    <div class="input-group">
+                                        <span class="input-group-text">{{ currency_symbol }}</span>
+                                        <input type="number" step="0.01" name="balance_{{ account.id }}" id="balance_{{ account.id }}" class="form-control text-end">
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center p-5">
+                                    <p class="text-muted">No accounts available for opening balance entry.</p>
+                                    <a href="{% url 'accounts:chart-of-accounts' %}" class="btn btn-save">Setup Chart of Accounts</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer/Actions Section -->
+        <div class="section-footer">
+            <div class="alert alert-info">
+                <strong>How it works:</strong> Enter all your asset, liability, and equity balances. The system will automatically create a single, balanced journal entry using the 'Retained Earnings' account to ensure debits equal credits.
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-save btn-lg">
+                    <i class="bi bi-check-circle"></i> Save Opening Balances
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Reusing styles from chart_of_accounts_list.html for consistency -->
+<style>
+.form-container { background: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border: 1px solid #e0e0e0; padding: 0; margin-bottom: 2rem; border-radius: 0; }
+.section-header { background: #f8f9fa; padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; }
+.section-header h5 { color: #2c3e50; font-weight: 600; margin: 0; }
+.section-body { padding: 1.5rem; }
+.section-footer { padding: 1.5rem; background: #f8f9fa; border-top: 1px solid #e9ecef; }
+.btn { border-radius: 0 !important; }
+.btn-back { background: #6c757d; color: white; }
+.btn-back:hover { background: #5a6268; color: white; }
+.btn-save { background: #343a40; color: white; }
+.btn-save:hover { background: #23272b; color: white; }
+.table-minimal { font-size: 14px; }
+.table-minimal th { background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 12px 1.5rem; font-weight: 600; color: #495057; }
+.table-minimal td { border-bottom: 1px solid #dee2e6; padding: 8px 1.5rem; vertical-align: middle; }
+.table-minimal tbody tr:last-child td { border-bottom: none; }
+.group-header { background: #f1f3f4; }
+.group-title { font-weight: 600; color: #2c3e50; padding: 12px 1.5rem; }
+.input-group-text { border-radius: 0; }
+.form-control { border-radius: 0; }
+.required-field::after { content: " *"; color: red; }
+</style>
+{% endblock %}

@@ -1,3 +1,4 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\core\templates\core\admin_settings.html -->
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% load humanize %}
@@ -404,6 +405,11 @@
                                     <div class="form-row-2col">
                                         <div>{{ user_company_form.logo|as_crispy_field }}</div>
                                         <div>{{ user_company_form.currency|as_crispy_field }}</div>
+                                    </div>
+                                    
+                                    <div class="form-row-2col">
+                                        <div>{{ user_company_form.fiscal_year_start|as_crispy_field }}</div>
+                                        <div>{{ user_company_form.fiscal_closing_grace_period_months|as_crispy_field }}</div>
                                     </div>
                                     
                                     <div class="form-actions">

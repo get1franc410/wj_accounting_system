@@ -1,0 +1,234 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\production\templates\production\order_form.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load production_tags %}
+{% load currency_filters %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{{ page_title }}</h2>
+        <div>
+            <button type="button" class="btn btn-outline-secondary" onclick="goBack()">
+                <i class="bi bi-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
+    
+    <div class="card card-professional">
+        <div class="card-body">
+            <form method="post" id="orderForm">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.formula.id_for_label }}" class="form-label">Production Formula</label>
+                        {{ form.formula }}
+                        {% if form.formula.errors %}
+                        <div class="text-danger">{{ form.formula.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="{{ form.quantity.id_for_label }}" class="form-label">Production Quantity</label>
+                        {{ form.quantity }}
+                        {% if form.quantity.errors %}
+                        <div class="text-danger">{{ form.quantity.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Number of units to produce</small>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.planned_date.id_for_label }}" class="form-label">Planned Date</label>
+                        {{ form.planned_date }}
+                        {% if form.planned_date.errors %}
+                        <div class="text-danger">{{ form.planned_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <div class="text-danger">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div id="formula-details" class="mt-4 mb-4" style="display: none;">
+                    <h4>Formula Details</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">Material Requirements</div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Material</th>
+                                                    <th>Required</th>
+                                                    <th>Available</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="materials-table-body">
+                                                <!-- Materials will be populated here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">Cost Estimate</div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">Material Cost:</div>
+                                        <div class="col-6 text-end" id="material-cost">-</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">Labor Cost:</div>
+                                        <div class="col-6 text-end" id="labor-cost">-</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">Overhead Cost:</div>
+                                        <div class="col-6 text-end" id="overhead-cost">-</div>
+                                    </div>
+                                    <div class="row fw-bold mt-2">
+                                        <div class="col-6">Total Cost:</div>
+                                        <div class="col-6 text-end" id="total-cost">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">Output</div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">Product:</div>
+                                        <div class="col-6 text-end" id="output-product">-</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">Quantity:</div>
+                                        <div class="col-6 text-end" id="output-quantity">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary me-2" onclick="goBack()">Cancel</button>
+                    <button type="submit" class="btn btn-dark" id="submit-btn">Create Production Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const formulaSelect = document.getElementById('{{ form.formula.id_for_label }}');
+        const quantityInput = document.getElementById('{{ form.quantity.id_for_label }}');
+        const formulaDetails = document.getElementById('formula-details');
+        const materialsTableBody = document.getElementById('materials-table-body');
+        const materialCost = document.getElementById('material-cost');
+        const laborCost = document.getElementById('labor-cost');
+        const overheadCost = document.getElementById('overhead-cost');
+        const totalCost = document.getElementById('total-cost');
+        const outputProduct = document.getElementById('output-product');
+        const outputQuantity = document.getElementById('output-quantity');
+        const submitBtn = document.getElementById('submit-btn');
+        
+        // Function to update formula details
+        function updateFormulaDetails() {
+            const formulaId = formulaSelect.value;
+            const quantity = parseFloat(quantityInput.value) || 1;
+            
+            if (!formulaId) {
+                formulaDetails.style.display = 'none';
+                return;
+            }
+            
+            // Fetch formula details
+            fetch(`/production/api/formulas/${formulaId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Show formula details section
+                    formulaDetails.style.display = 'block';
+                    
+                    // Calculate requirements based on quantity
+                    fetch(`/production/api/calculate-requirements/?formula_id=${formulaId}&quantity=${quantity}`)
+                        .then(response => response.json())
+                        .then(reqData => {
+                            // Update materials table
+                            materialsTableBody.innerHTML = '';
+                            let allAvailable = true;
+                            
+                            reqData.requirements.forEach(req => {
+                                const row = document.createElement('tr');
+                                const statusClass = req.is_available ? 'success' : 'danger';
+                                const statusText = req.is_available ? 'Available' : `Short by ${req.shortage} ${req.unit}`;
+                                
+                                if (!req.is_available) allAvailable = false;
+                                
+                                row.innerHTML = `
+                                    <td>${req.material_name}</td>
+                                    <td>${req.required_quantity} ${req.unit}</td>
+                                    <td>${req.available_quantity} ${req.unit}</td>
+                                    <td><span class="badge bg-${statusClass}">${statusText}</span></td>
+                                `;
+                                materialsTableBody.appendChild(row);
+                            });
+                            
+                            // Update cost estimates
+                            materialCost.textContent = reqData.costs.material_cost.toFixed(2);
+                            laborCost.textContent = reqData.costs.labor_cost.toFixed(2);
+                            overheadCost.textContent = reqData.costs.overhead_cost.toFixed(2);
+                            totalCost.textContent = reqData.costs.total_cost.toFixed(2);
+                            
+                            // Update output details
+                            outputProduct.textContent = reqData.output.product_name;
+                            outputQuantity.textContent = `${reqData.output.quantity} ${reqData.output.unit}`;
+                            
+                            // Enable/disable submit button based on availability
+                            if (!allAvailable) {
+                                submitBtn.disabled = true;
+                                submitBtn.title = 'Insufficient materials for production';
+                                submitBtn.textContent = 'Insufficient Materials';
+                            } else {
+                                submitBtn.disabled = false;
+                                submitBtn.title = '';
+                                submitBtn.textContent = 'Create Production Order';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error calculating requirements:', error);
+                        });
+                })
+                .catch(error => {
+                    console.error('Error fetching formula details:', error);
+                    formulaDetails.style.display = 'none';
+                });
+        }
+        
+        // Update formula details when formula or quantity changes
+        formulaSelect.addEventListener('change', updateFormulaDetails);
+        quantityInput.addEventListener('input', updateFormulaDetails);
+        
+        // Initial update if formula is pre-selected
+        if (formulaSelect.value) {
+            updateFormulaDetails();
+        }
+    });
+</script>
+{% endblock %}

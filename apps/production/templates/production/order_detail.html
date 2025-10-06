@@ -1,0 +1,259 @@
+<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\production\templates\production\order_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load production_tags %}  
+{% load currency_filters %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Production Order: {{ order.order_number }}</h2>
+        <div>
+            {% if order.status == 'PLANNED' %}
+            <a href="{% url 'production:order_execute' order.id %}" class="btn btn-dark">
+                Execute Production
+            </a>
+            <form method="post" action="{% url 'production:order_cancel' order.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-dark" onclick="return confirm('Are you sure you want to cancel this production order?')">
+                    Cancel Order
+                </button>
+            </form>
+            {% endif %}
+            <button type="button" class="btn btn-outline-secondary" onclick="goBack()">
+                Back
+            </button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Order Details -->
+            <div class="card card-professional mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Order Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Formula</p>
+                            <p class="mb-0 fw-bold">{{ order.formula.name }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Production Quantity</p>
+                            <p class="mb-0 fw-bold">{{ order.quantity }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Status</p>
+                            <p class="mb-0">
+                                {% if order.status == 'PLANNED' %}
+                                <span class="badge bg-warning">Planned</span>
+                                {% elif order.status == 'IN_PROGRESS' %}
+                                <span class="badge bg-info">In Progress</span>
+                                {% elif order.status == 'COMPLETED' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Cancelled</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Planned Date</p>
+                            <p class="mb-0">{{ order.planned_date }}</p>
+                        </div>
+                        
+                        {% if order.start_date %}
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Started</p>
+                            <p class="mb-0">{{ order.start_date }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if order.completion_date %}
+                        <div class="col-md-4">
+                            <p class="mb-1 text-muted">Completed</p>
+                            <p class="mb-0">{{ order.completion_date }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if order.notes %}
+                    <div class="mb-0">
+                        <p class="mb-1 text-muted">Notes</p>
+                        <p class="mb-0">{{ order.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Material Requirements -->
+            <div class="card card-professional mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Material Requirements</h5>
+                    <span class="badge bg-primary">{{ material_usages|length }} items</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-professional mb-0">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Required</th>
+                                <th>Available</th>
+                                <th>Status</th>
+                                {% if order.status == 'COMPLETED' %}
+                                <th>Actual Used</th>
+                                <th>Variance</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usage in material_usages %}
+                            <tr>
+                                <td>{{ usage.material.name }}</td>
+                                <td>{{ usage.planned_quantity }} {{ usage.material.unit_of_measurement }}</td>
+                                <td>{{ usage.available|floatformat:2 }} {{ usage.material.unit_of_measurement }}</td>
+                                <td>
+                                    {% if usage.status == 'available' %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Low Stock</span>
+                                    {% endif %}
+                                </td>
+                                {% if order.status == 'COMPLETED' %}
+                                <td>{{ usage.actual_quantity|default:"-" }} {{ usage.material.unit_of_measurement }}</td>
+                                <td>
+                                    {% if usage.actual_quantity %}
+                                    {% with variance=usage.actual_quantity|sub:usage.planned_quantity %}
+                                    {% if variance > 0 %}
+                                    <span class="text-danger">+{{ variance|floatformat:2 }}</span>
+                                    {% elif variance < 0 %}
+                                    <span class="text-success">{{ variance|floatformat:2 }}</span>
+                                    {% else %}
+                                    <span class="text-muted">0.00</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Output Product -->
+            <div class="card card-professional">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Output Product</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1 text-muted">Product</p>
+                            <p class="mb-0 fw-bold">{{ order.formula.finished_product.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1 text-muted">Quantity Produced</p>
+                            <p class="mb-0 fw-bold">
+                                {{ order.quantity|mul:order.formula.unit_quantity }} 
+                                {{ order.formula.finished_product.unit_of_measurement }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Cost Analysis -->
+            <div class="card card-professional mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Cost Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Material Cost</p>
+                        <p class="mb-0 fw-bold">
+                            {% if order.status == 'COMPLETED' %}
+                            {{ order.actual_total_cost|sub:order.actual_labor_cost|sub:order.actual_overhead_cost|currency }}
+                            {% else %}
+                            {{ order.estimated_material_cost|currency }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Labor Cost</p>
+                        <p class="mb-0 fw-bold">
+                            {% if order.actual_labor_cost %}
+                            {{ order.actual_labor_cost|currency }}
+                            {% else %}
+                            {{ order.estimated_labor_cost|currency }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <p class="mb-1 text-muted">Overhead Cost</p>
+                        <p class="mb-0 fw-bold">
+                            {% if order.actual_overhead_cost %}
+                            {{ order.actual_overhead_cost|currency }}
+                            {% else %}
+                            {{ order.estimated_overhead_cost|currency }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <hr>
+                    <div class="mb-0">
+                        <p class="mb-1 text-muted">Total Cost</p>
+                        <p class="mb-0 fw-bold">
+                            {% if order.status == 'COMPLETED' %}
+                            {{ order.actual_total_cost|currency }}
+                            {% else %}
+                            {{ order.estimated_total_cost|currency }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Material Availability Status -->
+            {% if order.status == 'PLANNED' %}
+            <div class="card card-professional">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Material Availability</h5>
+                </div>
+                <div class="card-body">
+                    {% if materials_ready %}
+                    <div class="alert alert-success mb-0">
+                        All materials are available for production.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger mb-0">
+                        Some materials are not available in sufficient quantity.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'production:order_execute' order.id %}" class="btn btn-dark w-100 {% if not materials_ready %}disabled{% endif %}">
+                            Execute Production
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    window.history.back();
+}
+</script>
+{% endblock %}

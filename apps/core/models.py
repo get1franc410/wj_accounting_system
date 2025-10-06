@@ -6,6 +6,8 @@ from cryptography.fernet import Fernet
 from django.conf import settings
 import base64
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 class Company(models.Model):
     """
@@ -50,7 +52,19 @@ class Company(models.Model):
         null=False
     )
     
-    fiscal_year_start = models.DateField(null=True, blank=True)
+    # --- MODIFIED: Fiscal Year Fields ---
+    fiscal_year_start = models.DateField(
+        null=True, blank=True,
+        help_text=_("The start date of your financial year. The end date will be set automatically to 12 months later.")
+    )
+    fiscal_year_end = models.DateField(
+        null=True, blank=True, editable=False,
+        help_text=_("The calculated end date of your financial year.")
+    )
+    fiscal_closing_grace_period_months = models.PositiveIntegerField(
+        default=3,
+        help_text=_("The number of months after the fiscal year ends where accountants can still make entries.")
+    )
     
     # Relationships
     primary_contact = models.ForeignKey(
@@ -71,21 +85,58 @@ class Company(models.Model):
         verbose_name = _('Company')
         verbose_name_plural = _('Companies')
         ordering = ['name']
-        # --- FIX: Removed the overly restrictive UniqueConstraint ---
-        # The 'name' field is already unique=True, which is correct.
-        # We do not need a constraint on company_type.
-        # constraints = [
-        #     models.UniqueConstraint(fields=['company_type'], name='unique_company_type')
-        # ]
 
     def __str__(self):
         return f"{self.name} ({self.get_company_type_display()})"
 
     def save(self, *args, **kwargs):
-        # The full_clean() call is good, but it was what triggered the error.
-        # Now that the constraint is gone, it will work correctly.
+        # --- NEW: Automatically calculate fiscal_year_end ---
+        if self.fiscal_year_start:
+            # The end date is 12 months after the start, minus one day.
+            self.fiscal_year_end = self.fiscal_year_start + relativedelta(months=12) - relativedelta(days=1)
+        
         self.full_clean()
         super().save(*args, **kwargs)
+
+    # --- NEW: Helper properties for date checks ---
+    @property
+    def hard_closing_date(self):
+        """
+        Calculates the date before which no non-admin user can post transactions.
+        This is the end of the previous fiscal year plus the grace period.
+        """
+        if not self.fiscal_year_start:
+            return None
+        
+        today = timezone.now().date()
+        # Find the start of the current fiscal year relative to today
+        current_fiscal_year_start = self.fiscal_year_start
+        while current_fiscal_year_start + relativedelta(months=12) <= today:
+            current_fiscal_year_start += relativedelta(months=12)
+            
+        # The "hard close" applies to the period *before* the previous fiscal year ended
+        previous_fiscal_year_end = current_fiscal_year_start - relativedelta(days=1)
+        
+        # The hard closing date is the end of that previous year + grace period
+        hard_close_date = previous_fiscal_year_end + relativedelta(months=self.fiscal_closing_grace_period_months)
+        return hard_close_date
+
+    def is_period_closed_for_user(self, transaction_date, user):
+        """
+        Check if a given date falls into a period that is closed for the user's role.
+        Returns True if closed, False otherwise.
+        """
+        hard_close_date = self.hard_closing_date
+        if not hard_close_date:
+            return False # No fiscal year is set, so nothing is closed
+
+        # If the transaction date is before the hard closing date
+        if transaction_date <= hard_close_date:
+            # Only Admins can post to a hard-closed period
+            if user.user_type != 'ADMIN':
+                return True
+        
+        return False
 
     @classmethod
     def get_user_company(cls):

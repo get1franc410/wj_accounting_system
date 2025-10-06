@@ -770,3 +770,57 @@
         font-size: 11px;
     }
 }
+
+/* action-buttons.css */
+.action-buttons-boxed {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 5px !important;
+    justify-content: flex-start !important;
+}
+
+.action-btn {
+    display: inline-block !important;
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    min-width: 40px !important;
+}
+
+.action-btn-view {
+    background-color: #6c757d !important; /* Gray */
+    color: white !important;
+}
+
+.action-btn-view:hover {
+    background-color: #5a6268 !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+.action-btn-edit {
+    background-color: #dc3545 !important; /* Red */
+    color: white !important;
+}
+
+.action-btn-edit:hover {
+    background-color: #c82333 !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+.action-btn-produce {
+    background-color: #28a745 !important; /* Green - matching the image */
+    color: white !important;
+}
+
+.action-btn-produce:hover {
+    background-color: #218838 !important;
+    color: white !important;
+    text-decoration: none !important;
+}

@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'apps.reporting',
     'apps.transactions',
     'apps.journal',
+    'apps.production',
 ]
 
 MIDDLEWARE = [
@@ -91,6 +92,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.core.context_processors.currency_context',
+                'apps.production.context_processors.production_access',
             ],
         },
     },

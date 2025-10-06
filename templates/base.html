@@ -29,6 +29,9 @@
   <link href="{% static 'assets/css/smart-search.css' %}" rel="stylesheet">
   <link href="{% static 'assets/css/dropdown-search.css' %}" rel="stylesheet">
 
+  <link rel="stylesheet" href="{% static 'assets/css/action-buttons.css' %}">
+
+
   <!-- Custom Styles -->
   <style>
     /* 🖼️ BACKGROUND IMAGE SETUP */
@@ -433,6 +436,14 @@
                               <li><hr class="dropdown-divider"></li>
                               <li><a href="{% url 'inventory:movement_list' %}"><i class="bi bi-list-check"></i> Movement History</a></li>
                           {% endif %}
+                          
+                          <!-- Production Menu Items - Only show if user has production access -->
+                          {% if has_production_access %}
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a href="{% url 'production:formula_list' %}"><i class="bi bi-receipt"></i> Production Formulas</a></li>
+                          <li><a href="{% url 'production:order_list' %}"><i class="bi bi-list-check"></i> Production Orders</a></li>
+                          {% endif %}
+                          
                           <li><hr class="dropdown-divider"></li>
                           <li><a href="{% url 'inventory:export-items' %}?format=excel"><i class="bi bi-download"></i> Export Items</a></li>
                           <li><a href="{% url 'inventory:export-valuation' %}?format=pdf"><i class="bi bi-file-earmark-pdf"></i> Valuation Report</a></li>
@@ -527,7 +538,9 @@
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
   <!-- Vendor JS Files -->
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  
   <script src="{% static 'assets/js/main.js' %}"></script>
   <script src="{% static 'assets/js/smart_search.js' %}"></script>
   <script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
@@ -543,49 +556,29 @@
   }
   </script>
   
+  <!-- FIX 2: Consolidate and correct the initialization script to run after the page loads -->
   <script>
   document.addEventListener('DOMContentLoaded', function() {
-      // Initialize all dropdown filters with data-filter attribute
-      initializeAllDropdownFilters();
+      // This function runs once the entire page DOM is ready.
       
       // Initialize all smart search fields
-      initializeAllSmartSearchFields();
-  });
+      if (typeof initializeAllSmartSearchFields === 'function') {
+          initializeAllSmartSearchFields();
+      }
 
-      $('select[data-filter="true"], .dropdown[data-filter="true"]').dropdownFilter({
-            filterPlaceholder: 'Search...',
-            noResultsText: 'No matching items found',
-            maxHeight: '250px'
-  });
-
-  function initializeAllDropdownFilters() {
-      // For regular select elements that need filtering
-      const filterSelects = document.querySelectorAll('select[data-filter="true"]');
-      
-      filterSelects.forEach(select => {
-          if (window.jQuery && window.jQuery.fn.dropdownFilter) {
-              jQuery(select).dropdownFilter({
-                  filterPlaceholder: select.dataset.placeholder || 'Search...',
-                  noResultsText: 'No matching items found',
-                  maxHeight: '250px'
-              });
-          } else {
-              console.warn('jQuery or dropdownFilter plugin not loaded');
-          }
-      });
-      
-      // For dropdown containers with data-filter attribute
-      if (window.jQuery) {
-          jQuery('.dropdown[data-filter="true"]').dropdownFilter({
+      // Initialize all dropdown filters (this requires jQuery)
+      if (typeof jQuery !== 'undefined' && jQuery.fn.dropdownFilter) {
+          jQuery('select[data-filter="true"], .dropdown[data-filter="true"]').dropdownFilter({
               filterPlaceholder: 'Search...',
               noResultsText: 'No matching items found',
               maxHeight: '250px'
           });
+      } else {
+          console.warn('jQuery or dropdownFilter plugin not loaded, cannot initialize dropdown filters.');
       }
-  }
+  });
 
   function initializeAllSmartSearchFields() {
-      // For API-based smart search fields
       const smartSearchInputs = document.querySelectorAll('.smart-search-input');
       
       smartSearchInputs.forEach(input => {
@@ -601,12 +594,15 @@
   </script>
 
   <script>
-// Complete Navigation JavaScript for all screen sizes
+// Complete and Corrected Navigation JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-  // Mobile Navigation Toggle
-  const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
   const navbar = document.querySelector('#navbar');
+  const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
   
+  /**
+   * 1. Mobile Navigation Toggle (Hamburger Menu)
+   * Toggles the main navigation menu on and off for mobile screens.
+   */
   if (mobileNavToggle) {
     mobileNavToggle.addEventListener('click', function(e) {
       navbar.classList.toggle('navbar-mobile');
@@ -615,61 +611,52 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Enhanced Dropdown Navigation for all screen sizes
+  /**
+   * 2. Dropdown Functionality in Mobile View (Accordion Style)
+   * This is the core fix. It ensures that when in mobile view, clicking a dropdown
+   * opens its submenu and closes any others.
+   */
   const navDropdowns = document.querySelectorAll('.navbar .dropdown > a');
-  
-  navDropdowns.forEach(dropdown => {
-    dropdown.addEventListener('click', function(e) {
-      // Check if we're on a smaller screen (including small laptops)
-      if (window.innerWidth <= 1199) {
-        e.preventDefault();
-        
-        // Toggle dropdown-active class on the link
-        this.classList.toggle('dropdown-active');
-        
-        // Toggle dropdown-active class on the dropdown menu
-        const dropdownMenu = this.nextElementSibling;
-        dropdownMenu.classList.toggle('dropdown-active');
-        
-        // Close other dropdowns
-        navDropdowns.forEach(otherDropdown => {
-          if (otherDropdown !== this) {
-            otherDropdown.classList.remove('dropdown-active');
-            if (otherDropdown.nextElementSibling) {
-              otherDropdown.nextElementSibling.classList.remove('dropdown-active');
+  navDropdowns.forEach(dropdownLink => {
+    dropdownLink.addEventListener('click', function(e) {
+      // Only activate this special dropdown handling when in mobile view.
+      if (navbar.classList.contains('navbar-mobile')) {
+        e.preventDefault(); // Prevent the link from navigating away.
+
+        const nextDropdownMenu = this.nextElementSibling;
+        const isCurrentlyActive = this.classList.contains('dropdown-active');
+
+        // First, close all other dropdowns that might be open
+        navDropdowns.forEach(link => {
+            if (link !== this) {
+                link.classList.remove('dropdown-active');
+                link.nextElementSibling.classList.remove('dropdown-active');
             }
-          }
         });
+
+        // Now, toggle the one that was clicked
+        if (!isCurrentlyActive) {
+            this.classList.add('dropdown-active');
+            nextDropdownMenu.classList.add('dropdown-active');
+        } else {
+            this.classList.remove('dropdown-active');
+            nextDropdownMenu.classList.remove('dropdown-active');
+        }
       }
     });
   });
-  
-  // Close dropdowns when clicking outside
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('.navbar .dropdown') && window.innerWidth <= 1199) {
-      document.querySelectorAll('.navbar .dropdown > a').forEach(link => {
-        link.classList.remove('dropdown-active');
-      });
-      
-      document.querySelectorAll('.navbar .dropdown ul').forEach(menu => {
-        menu.classList.remove('dropdown-active');
-      });
+
+  /**
+   * 3. Close mobile nav when clicking outside of it
+   */
+  document.addEventListener('click', (e) => {
+    const isClickInside = navbar.contains(e.target) || (mobileNavToggle && mobileNavToggle.contains(e.target));
+    if (!isClickInside && navbar.classList.contains('navbar-mobile')) {
+      navbar.classList.remove('navbar-mobile');
+      mobileNavToggle.classList.add('bi-list');
+      mobileNavToggle.classList.remove('bi-x');
     }
-  });
-  
-  // Handle window resize events
-  window.addEventListener('resize', function() {
-    if (window.innerWidth > 1199) {
-      // Reset mobile-specific classes on larger screens
-      document.querySelectorAll('.navbar .dropdown > a').forEach(link => {
-        link.classList.remove('dropdown-active');
-      });
-      
-      document.querySelectorAll('.navbar .dropdown ul').forEach(menu => {
-        menu.classList.remove('dropdown-active');
-      });
-    }
-  });
+  }, true);
 });
 </script>
   
