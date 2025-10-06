@@ -33,29 +33,9 @@ echo "✅ Git push to '$GIT_BRANCH' branch successful."
 # 3. Connect to PythonAnywhere and run update commands
 echo "🔄 Step 3: Connecting to PythonAnywhere to deploy updates..."
 
-# This corrected block passes all commands as a single string to ssh.
-# This is more reliable than the previous method.
-ssh ${PA_USERNAME}@ssh.pythonanywhere.com "
-  set -e # Stop the script if any command fails on the server
-
-  echo '  - Navigating to project directory...'
-  cd ${PA_PROJECT_PATH}
-
-  echo '  - Pulling latest changes from GitHub...'
-  git pull origin ${GIT_BRANCH}
-
-  echo '  - Installing/updating Python packages...'
-  ${PA_VENV_PATH}/bin/pip install -r requirements.txt
-
-  echo '  - Applying database migrations...'
-  ${PA_VENV_PATH}/bin/python manage.py migrate
-
-  echo '  - Collecting static files...'
-  ${PA_VENV_PATH}/bin/python manage.py collectstatic --noinput
-
-  echo '  - Reloading web application...'
-  touch ${PA_WSGI_FILE}
-"
+# This version puts all commands on a single line, which is the most
+# reliable way to execute remote commands via SSH in a script.
+ssh ${PA_USERNAME}@ssh.pythonanywhere.com "set -e; echo '  -> Connected to server. Starting remote deployment...'; cd ${PA_PROJECT_PATH}; echo '  - Pulling latest changes from GitHub...'; git pull origin ${GIT_BRANCH}; echo '  - Installing/updating Python packages...'; ${PA_VENV_PATH}/bin/pip install -r requirements.txt; echo '  - Applying database migrations...'; ${PA_VENV_PATH}/bin/python manage.py migrate; echo '  - Collecting static files...'; ${PA_VENV_PATH}/bin/python manage.py collectstatic --noinput; echo '  - Reloading web application...'; touch ${PA_WSGI_FILE};"
 
 echo "✅ Deployment to PythonAnywhere complete."
 echo "🚀🚀🚀 ALL DONE! Your website should now be live with the latest updates. 🚀🚀🚀"
