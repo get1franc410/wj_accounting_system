@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.utils.html import format_html
 from django.db.models import F
-from .models import Transaction, TransactionItem, TransactionCategory
+from .models import Transaction, TransactionItem, TransactionCategory, ExpenseLine
 
 class PaymentStatusFilter(SimpleListFilter):
     """Custom filter for payment status based on calculated values"""
@@ -76,10 +76,16 @@ class TransactionItemInline(admin.TabularInline):
     readonly_fields = ('line_total',)
     raw_id_fields = ('item',) 
 
+class ExpenseLineInline(admin.TabularInline):
+    """Allows editing of ExpenseLines directly within the Transaction admin page."""
+    model = ExpenseLine
+    extra = 0
+    raw_id_fields = ('account',)
+
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     """Enhanced admin interface for the Transaction model with payment status filtering."""
-    inlines = [TransactionItemInline]
+    inlines = [TransactionItemInline, ExpenseLineInline]
     
     list_display = (
         'id',

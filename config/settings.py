@@ -35,8 +35,11 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # Get allowed hosts from environment variables
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
-
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://127.0.0.1,http://localhost').split(',')
 # Application definition
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
 
 INSTALLED_APPS = [
     'django.contrib.admin',

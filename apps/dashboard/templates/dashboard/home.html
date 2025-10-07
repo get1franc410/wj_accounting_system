@@ -1,4 +1,3 @@
-<!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\dashboard\templates\dashboard\home.html -->
 {% extends 'base.html' %}
 {% load humanize %}
 
@@ -9,332 +8,203 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="page-container">
-    <!-- Animated Welcome Section with Professional Styling -->
-    <div class="list-container mb-4">
-        <div class="section-container">
-            <div class="section-body text-center py-4">
-                <h1 class="welcome-title">
-                    <span class="typing-text" data-text="Welcome to Your Accounting Dashboard"></span>
-                    <span class="cursor">|</span>
-                </h1>
-                <p class="welcome-subtitle fade-in-up">
-                    <strong>{{ user.company.name|default:"Your Business" }}</strong> - Professional Financial Management
-                </p>
-                <div class="welcome-stats fade-in-up-delay">
-                    <span class="stat-highlight pulse"> Real-time insights</span> • 
-                    <span class="stat-highlight pulse-delay-1"> Complete financial control</span> • 
-                    <span class="stat-highlight pulse-delay-2"> Business intelligence</span>
+    <!-- Animated Welcome Section -->
+    <div class="welcome-container mb-4">
+        <h1 class="welcome-title">
+            <span class="typing-text" data-text="Welcome to Your Accounting Dashboard"></span>
+            <span class="cursor">|</span>
+        </h1>
+        <p class="welcome-subtitle fade-in-up">
+            <strong class="company-name-feather">{{ user.company.name|default:"Your Business" }}</strong> - Professional Financial Management
+        </p>
+        <div class="welcome-actions fade-in-up-delay">
+            <div class="floating-metrics">
+                <div class="floating-metric">
+                    <span class="metric-text">Smart Analytics</span>
                 </div>
-                <div class="welcome-actions fade-in-up-delay-2">
-                    <div class="floating-metrics">
-                        <div class="floating-metric">
-                            <span class="metric-icon"></span>
-                            <span class="metric-text">Smart Analytics</span>
-                        </div>
-                        <div class="floating-metric">
-                            <span class="metric-icon"></span>
-                            <span class="metric-text">Real-time Updates</span>
-                        </div>
-                        <div class="floating-metric">
-                            <span class="metric-icon"></span>
-                            <span class="metric-text">Secure & Reliable</span>
-                        </div>
-                    </div>
+                <div class="floating-metric">
+                    <span class="metric-text">Real-time Updates</span>
+                </div>
+                <div class="floating-metric">
+                    <span class="metric-text">Secure & Reliable</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Page Header -->
-    <div class="page-header">
-        <div>
-            <h2>Dashboard Overview</h2>
-            <p>Your business performance at a glance</p>
-        </div>
-    </div>
-
-    <!-- Enhanced Dashboard Cards Row -->
-    <div class="list-container">
-        <div class="section-container">
-            <div class="section-header">
-                <h6>Financial Summary</h6>
+    <!-- Main Dashboard Content Container -->
+    <div class="dashboard-main-container">
+        <!-- Page Header -->
+        <div class="page-header mb-3">
+            <div>
+                <h2>Dashboard Overview</h2>
+                <p>Your business performance at a glance</p>
             </div>
-            <div class="section-body">
-                <div class="row">
-                    <!-- Cash at Bank -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="metric-card">
-                            <div class="metric-header">
-                                <span class="metric-title">Cash at Bank</span>
-                            </div>
-                            <div class="metric-body">
-                                <div class="metric-value">{{ currency_symbol }}{{ cash_at_bank|floatformat:2|intcomma }}</div>
-                                <div class="metric-subtitle">Available Cash</div>
-                            </div>
+        </div>
+
+        <!-- Financial Summary Row -->
+        <h6 class="section-title">Financial Summary</h6>
+        <div class="row mb-4">
+            <!-- Cash at Bank -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card h-100">
+                    <div class="metric-header"><span class="metric-title">Cash at Bank</span></div>
+                    <div class="metric-body">
+                        <div class="metric-value">{{ currency_symbol }}{{ cash_at_bank|floatformat:2|intcomma }}</div>
+                        <div class="metric-subtitle">Available Cash</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accounts Receivable -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card h-100">
+                    <div class="metric-header"><span class="metric-title">Accounts Receivable</span></div>
+                    <div class="metric-body">
+                        <div class="metric-value">{{ currency_symbol }}{{ accounts_receivable|floatformat:2|intcomma }}</div>
+                        <div class="metric-subtitle">
+                            Money Owed to Us
+                            {% if overdue_invoices_count > 0 %}<br><span class="text-danger">{{ overdue_invoices_count }} overdue</span>{% endif %}
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Accounts Receivable -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="metric-card">
-                            <div class="metric-header">
-                                <span class="metric-title">Accounts Receivable</span>
-                            </div>
-                            <div class="metric-body">
-                                <div class="metric-value">{{ currency_symbol }}{{ accounts_receivable|floatformat:2|intcomma }}</div>
-                                <div class="metric-subtitle">
-                                    Money Owed to Us
-                                    {% if overdue_invoices_count > 0 %}
-                                        <br><span class="text-danger">{{ overdue_invoices_count }} overdue</span>
-                                    {% endif %}
+            <!-- Accounts Payable -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card h-100">
+                    <div class="metric-header"><span class="metric-title">Accounts Payable</span></div>
+                    <div class="metric-body">
+                        <div class="metric-value">{{ currency_symbol }}{{ accounts_payable|floatformat:2|intcomma }}</div>
+                        <div class="metric-subtitle">
+                            Money We Owe
+                            {% if overdue_bills_count > 0 %}<br><span class="text-danger">{{ overdue_bills_count }} overdue</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Net Income This Month -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card h-100">
+                    <div class="metric-header"><span class="metric-title">Net Income (Month)</span></div>
+                    <div class="metric-body">
+                        <div class="metric-value {% if net_income_this_month >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ currency_symbol }}{{ net_income_this_month|floatformat:2|intcomma }}
+                        </div>
+                        <div class="metric-subtitle">This Month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-2">
+            <!-- Income vs Expenses Chart -->
+            <div class="col-lg-8 mb-4">
+                <h6 class="section-title">Income vs Expenses (Last 12 Months)</h6>
+                <div class="chart-container">
+                    <canvas id="incomeExpenseChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Cash Flow Chart -->
+            <div class="col-lg-4 mb-4">
+                <h6 class="section-title">Cash Flow Trend</h6>
+                <div class="chart-container">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary Metrics, Actions, and Activity Row -->
+        <div class="row">
+            <!-- Business Metrics -->
+            <div class="col-lg-4 mb-4">
+                <h6 class="section-title">Business Metrics</h6>
+                <div class="content-box h-100">
+                    <div class="row text-center">
+                        <div class="col-6 border-end"><div class="metric-value-small">{{ active_customers }}</div><div class="metric-subtitle-small">Total Customers</div></div>
+                        <div class="col-6"><div class="metric-value-small">{{ inventory_items }}</div><div class="metric-subtitle-small">Inventory Items</div></div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="row text-center">
+                        <div class="col-6 border-end"><div class="metric-value-small text-warning">{{ low_stock_items_count }}</div><div class="metric-subtitle-small">Low Stock Items</div></div>
+                        <div class="col-6"><div class="metric-value-small">{{ total_transactions_count }}</div><div class="metric-subtitle-small">Total Transactions</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="col-lg-4 mb-4">
+                <h6 class="section-title">Quick Actions</h6>
+                <div class="content-box h-100">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'transactions:transaction_create' %}" class="btn btn-save">New Transaction</a>
+                        <a href="{% url 'customers:customer-create' %}" class="btn btn-back">Add Customer/Vendor</a>
+                        <a href="{% url 'journal:journal-entry-create' %}" class="btn btn-cancel" style="background: #adb5bd; color: #343a40;">Journal Entry</a>
+                        <a href="{% url 'inventory:item_create' %}" class="btn btn-cancel">Add Inventory Item</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="col-lg-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="section-title mb-0">Recent Activity</h6>
+                    <a href="{% url 'transactions:transaction_list' %}" class="btn-link-minimal">View All</a>
+                </div>
+                <div class="content-box h-100">
+                    {% if recent_transactions %}
+                        <div class="activity-list">
+                            {% for transaction in recent_transactions %}
+                            <div class="activity-item">
+                                <div class="activity-content">
+                                    <div class="activity-title">{{ transaction.get_transaction_type_display }}</div>
+                                    <div class="activity-subtitle">{% if transaction.customer %}{{ transaction.customer.name }}{% else %}No Customer{% endif %}</div>
+                                    <div class="activity-date">{{ transaction.date|date:"M d" }}</div>
                                 </div>
+                                <div class="activity-amount">{{ currency_symbol }}{{ transaction.total_amount|floatformat:0 }}</div>
                             </div>
+                            {% endfor %}
                         </div>
-                    </div>
-
-                    <!-- Accounts Payable -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="metric-card">
-                            <div class="metric-header">
-                                <span class="metric-title">Accounts Payable</span>
-                            </div>
-                            <div class="metric-body">
-                                <div class="metric-value">{{ currency_symbol }}{{ accounts_payable|floatformat:2|intcomma }}</div>
-                                <div class="metric-subtitle">
-                                    Money We Owe
-                                    {% if overdue_bills_count > 0 %}
-                                        <br><span class="text-danger">{{ overdue_bills_count }} overdue</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Net Income This Month -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="metric-card">
-                            <div class="metric-header">
-                                <span class="metric-title">Net Income (Month)</span>
-                            </div>
-                            <div class="metric-body">
-                                <div class="metric-value {% if net_income_this_month >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                    {{ currency_symbol }}{{ net_income_this_month|floatformat:2|intcomma }}
-                                </div>
-                                <div class="metric-subtitle">This Month</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Row -->
-    <div class="row">
-        <!-- Income vs Expenses Chart -->
-        <div class="col-lg-8 mb-4">
-            <div class="list-container">
-                <div class="section-container">
-                    <div class="section-header">
-                        <h6>Income vs Expenses (Last 12 Months)</h6>
-                    </div>
-                    <div class="section-body">
-                        <canvas id="incomeExpenseChart" height="100"></canvas>
-                    </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">No recent transactions</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Cash Flow Chart -->
-        <div class="col-lg-4 mb-4">
-            <div class="list-container">
-                <div class="section-container">
-                    <div class="section-header">
-                        <h6>Cash Flow Trend</h6>
-                    </div>
-                    <div class="section-body">
-                        <canvas id="cashFlowChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Secondary Metrics Row -->
-    <div class="row">
-        <!-- Business Metrics -->
-        <div class="col-lg-4 mb-4">
-            <div class="list-container">
-                <div class="section-container">
-                    <div class="section-header">
-                        <h6>Business Metrics</h6>
-                    </div>
-                    <div class="section-body">
-                        <div class="row text-center">
-                            <div class="col-6 border-end">
-                                <div class="metric-value-small">{{ active_customers }}</div>
-                                <div class="metric-subtitle-small">Total Customers</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="metric-value-small">{{ inventory_items }}</div>
-                                <div class="metric-subtitle-small">Inventory Items</div>
-                            </div>
-                        </div>
-                        <hr class="my-3">
-                        <div class="row text-center">
-                            <div class="col-6 border-end">
-                                <div class="metric-value-small text-warning">{{ low_stock_items_count }}</div>
-                                <div class="metric-subtitle-small">Low Stock Items</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="metric-value-small">{{ total_transactions_count }}</div>
-                                <div class="metric-subtitle-small">Total Transactions</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="col-lg-4 mb-4">
-            <div class="list-container">
-                <div class="section-container">
-                    <div class="section-header">
-                        <h6>Quick Actions</h6>
-                    </div>
-                    <div class="section-body">
-                        <div class="d-grid gap-2">
-                            <a href="{% url 'transactions:transaction_create' %}" class="btn btn-save">
-                                New Transaction
-                            </a>
-                            <a href="{% url 'customers:customer-create' %}" class="btn btn-back">
-                                Add Customer/Vendor
-                            </a>
-                            <a href="{% url 'journal:journal-entry-create' %}" class="btn btn-cancel" style="background: #adb5bd; color: #343a40;">
-                                Journal Entry
-                            </a>
-                            <a href="{% url 'inventory:item_create' %}" class="btn btn-cancel">
-                                Add Inventory Item
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Transactions -->
-        <div class="col-lg-4 mb-4">
-            <div class="list-container">
-                <div class="section-container">
-                    <div class="section-header d-flex justify-content-between align-items-center">
-                        <h6>Recent Activity</h6>
-                        <a href="{% url 'transactions:transaction_list' %}" class="btn-link-minimal">View All</a>
-                    </div>
-                    <div class="section-body">
-                        {% if recent_transactions %}
-                            <div class="activity-list">
-                                {% for transaction in recent_transactions %}
-                                <div class="activity-item">
-                                    <div class="activity-content">
-                                        <div class="activity-title">{{ transaction.get_transaction_type_display }}</div>
-                                        <div class="activity-subtitle">
-                                            {% if transaction.customer %}{{ transaction.customer.name }}{% else %}No Customer{% endif %}
-                                        </div>
-                                        <div class="activity-date">{{ transaction.date|date:"M d" }}</div>
-                                    </div>
-                                    <div class="activity-amount">
-                                        {{ currency_symbol }}{{ transaction.total_amount|floatformat:0 }}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="text-center text-muted py-3">No recent transactions</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Production Statistics Row -->
-    <div class="row">
+        <!-- Production Statistics Row -->
         {% if production_stats %}
-        <div class="col-md-6">
-            <div class="card card-professional mb-4">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Production Overview</h5>
-                </div>
-                <div class="card-body">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h6 class="section-title">Production Overview</h6>
+                <div class="content-box">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-box bg-light-primary me-3">
-                                    <i class="bi bi-receipt text-primary"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0">{{ production_stats.formulas_count }}</h6>
-                                    <p class="text-muted mb-0">Production Formulas</p>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="d-flex align-items-center"><div class="icon-box bg-light-primary me-3"><i class="bi bi-receipt text-primary"></i></div><div><h6 class="mb-0">{{ production_stats.formulas_count }}</h6><p class="text-muted mb-0">Formulas</p></div></div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-box bg-light-warning me-3">
-                                    <i class="bi bi-hourglass-split text-warning"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0">{{ production_stats.planned_orders }}</h6>
-                                    <p class="text-muted mb-0">Planned Orders</p>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="d-flex align-items-center"><div class="icon-box bg-light-warning me-3"><i class="bi bi-hourglass-split text-warning"></i></div><div><h6 class="mb-0">{{ production_stats.planned_orders }}</h6><p class="text-muted mb-0">Planned Orders</p></div></div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-box bg-light-success me-3">
-                                    <i class="bi bi-check-circle text-success"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0">{{ production_stats.completed_orders }}</h6>
-                                    <p class="text-muted mb-0">Completed (30 days)</p>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="d-flex align-items-center"><div class="icon-box bg-light-success me-3"><i class="bi bi-check-circle text-success"></i></div><div><h6 class="mb-0">{{ production_stats.completed_orders }}</h6><p class="text-muted mb-0">Completed (30d)</p></div></div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-box bg-light-info me-3">
-                                    <i class="bi bi-box text-info"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0">
-                                        <a href="{% url 'production:order_list' %}" class="text-decoration-none">View All</a>
-                                    </h6>
-                                    <p class="text-muted mb-0">Production Orders</p>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="d-flex align-items-center"><div class="icon-box bg-light-info me-3"><i class="bi bi-box text-info"></i></div><div><h6 class="mb-0"><a href="{% url 'production:order_list' %}" class="text-decoration-none">View All</a></h6><p class="text-muted mb-0">Production Orders</p></div></div>
                         </div>
                     </div>
-                    
                     {% if production_stats.recent_productions %}
                     <hr>
                     <h6>Recent Productions</h6>
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Order #</th>
-                                    <th>Product</th>
-                                    <th>Date</th>
-                                    <th>Quantity</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Order #</th><th>Product</th><th>Date</th><th>Quantity</th></tr></thead>
                             <tbody>
                                 {% for order in production_stats.recent_productions %}
                                 <tr>
-                                    <td>
-                                        <a href="{% url 'production:order_detail' order.id %}">{{ order.order_number }}</a>
-                                    </td>
+                                    <td><a href="{% url 'production:order_detail' order.id %}">{{ order.order_number }}</a></td>
                                     <td>{{ order.formula.finished_product.name }}</td>
                                     <td>{{ order.completion_date|date:"M d, Y" }}</td>
                                     <td>{{ order.quantity }}</td>
@@ -348,27 +218,19 @@
             </div>
         </div>
         {% endif %}
-    </div>
 
-    <!-- Alerts Row -->
-    {% if overdue_invoices_count > 0 or low_stock_items_count > 0 or overdue_bills_count > 0 %}
-    <div class="list-container alert-section">
-        <div class="section-container">
-            <div class="section-header alert-header">
-                <h6>Attention Required</h6>
-            </div>
-            <div class="section-body">
+        <!-- Alerts Row -->
+        {% if overdue_invoices_count > 0 or low_stock_items_count > 0 or overdue_bills_count > 0 %}
+        <div class="row">
+            <div class="col-12">
+                <h6 class="section-title text-danger">Attention Required</h6>
                 <div class="row">
                     {% if overdue_invoices_count > 0 %}
                     <div class="col-md-4 mb-3">
                         <div class="alert-card alert-danger-minimal">
                             <div class="alert-title">Overdue Invoices</div>
-                            <div class="alert-content">
-                                You have <strong>{{ overdue_invoices_count }}</strong> overdue invoice{{ overdue_invoices_count|pluralize }}.
-                            </div>
-                            <div class="alert-action">
-                                <a href="{% url 'transactions:transaction_list' %}?status=unpaid" class="btn btn-alert-action">View Overdue</a>
-                            </div>
+                            <div class="alert-content">You have <strong>{{ overdue_invoices_count }}</strong> overdue invoice{{ overdue_invoices_count|pluralize }}.</div>
+                            <div class="alert-action"><a href="{% url 'transactions:transaction_list' %}?status=unpaid" class="btn btn-alert-action">View Overdue</a></div>
                         </div>
                     </div>
                     {% endif %}
@@ -376,12 +238,8 @@
                     <div class="col-md-4 mb-3">
                         <div class="alert-card alert-danger-minimal">
                             <div class="alert-title">Overdue Bills</div>
-                            <div class="alert-content">
-                                You have <strong>{{ overdue_bills_count }}</strong> overdue bill{{ overdue_bills_count|pluralize }}.
-                            </div>
-                            <div class="alert-action">
-                                <a href="{% url 'transactions:transaction_list' %}?transaction_type=PURCHASE&status=unpaid" class="btn btn-alert-action">View Bills</a>
-                            </div>
+                            <div class="alert-content">You have <strong>{{ overdue_bills_count }}</strong> overdue bill{{ overdue_bills_count|pluralize }}.</div>
+                            <div class="alert-action"><a href="{% url 'transactions:transaction_list' %}?transaction_type=PURCHASE&status=unpaid" class="btn btn-alert-action">View Bills</a></div>
                         </div>
                     </div>
                     {% endif %}
@@ -389,20 +247,16 @@
                     <div class="col-md-4 mb-3">
                         <div class="alert-card alert-warning-minimal">
                             <div class="alert-title">Low Stock Alert</div>
-                            <div class="alert-content">
-                                You have <strong>{{ low_stock_items_count }}</strong> item{{ low_stock_items_count|pluralize }} running low on stock.
-                            </div>
-                            <div class="alert-action">
-                                <a href="{% url 'inventory:item_list' %}?stock_status=low_stock" class="btn btn-alert-action">View Items</a>
-                            </div>
+                            <div class="alert-content">You have <strong>{{ low_stock_items_count }}</strong> item{{ low_stock_items_count|pluralize }} running low on stock.</div>
+                            <div class="alert-action"><a href="{% url 'inventory:item_list' %}?stock_status=low_stock" class="btn btn-alert-action">View Items</a></div>
                         </div>
                     </div>
                     {% endif %}
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
 <!-- Chart Scripts -->
@@ -412,146 +266,83 @@ document.addEventListener('DOMContentLoaded', function() {
     function typeWriter(element, text, speed = 100) {
         let i = 0;
         element.textContent = '';
-        
         function type() {
             if (i < text.length) {
                 element.textContent += text.charAt(i);
                 i++;
                 setTimeout(type, speed);
             } else {
-                // Hide cursor after typing is complete
-                setTimeout(() => {
-                    document.querySelector('.cursor').style.opacity = '0';
-                }, 1000);
+                setTimeout(() => { document.querySelector('.cursor').style.opacity = '0'; }, 1000);
             }
         }
         type();
     }
-
-    // Start typing animation
     const typingElement = document.querySelector('.typing-text');
-    const textToType = typingElement.getAttribute('data-text');
-    setTimeout(() => {
-        typeWriter(typingElement, textToType, 80);
-    }, 500);
+    if (typingElement) {
+        const textToType = typingElement.getAttribute('data-text');
+        setTimeout(() => { typeWriter(typingElement, textToType, 80); }, 500);
+    }
 
-    // Income vs Expenses Chart - RED AND GREEN LINES
-    const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
-    const incomeExpenseChart = new Chart(incomeExpenseCtx, {
-        type: 'line',
-        data: {
-            labels: {{ monthly_labels|safe }},
-            datasets: [{
-                label: 'Income',
-                data: {{ monthly_income|safe }},
-                borderColor: '#28a745',        // GREEN for income
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                tension: 0.4,
-                fill: true,
-                borderWidth: 3
-            }, {
-                label: 'Expenses',
-                data: {{ monthly_expenses|safe }},
-                borderColor: '#dc3545',        // RED for expenses
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                tension: 0.4,
-                fill: true,
-                borderWidth: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20,
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    }
+    // Income vs Expenses Chart
+    const incomeExpenseCtx = document.getElementById('incomeExpenseChart');
+    if (incomeExpenseCtx) {
+        new Chart(incomeExpenseCtx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: {{ monthly_labels|safe }},
+                datasets: [{
+                    label: 'Income', data: {{ monthly_income|safe }}, borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)', tension: 0.4, fill: true, borderWidth: 3
+                }, {
+                    label: 'Expenses', data: {{ monthly_expenses|safe }}, borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)', tension: 0.4, fill: true, borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 20, font: { size: 14, weight: 'bold' } } },
+                    tooltip: { mode: 'index', intersect: false, callbacks: { label: (c) => `${c.dataset.label}: {{ currency_symbol }}${c.parsed.y.toLocaleString()}` } }
                 },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': {{ currency_symbol }}' + 
-                                   context.parsed.y.toLocaleString();
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '{{ currency_symbol }}' + value.toLocaleString();
-                        }
-                    }
-                }
-            },
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
+                scales: { y: { beginAtZero: true, ticks: { callback: (v) => `{{ currency_symbol }}${v.toLocaleString()}` } } },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
             }
-        }
-    });
+        });
+    }
 
-    // Cash Flow Chart - WINE/OXBLOOD RED BARS
-    const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
-    const cashFlowChart = new Chart(cashFlowCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ cash_flow_labels|safe }},
-            datasets: [{
-                label: 'Net Cash Flow',
-                data: {{ cash_flow_data|safe }},
-                backgroundColor: '#8B0000',    // OXBLOOD RED bars
-                borderColor: '#660000',        // Darker red border
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.parsed.y;
-                            return (value >= 0 ? 'Profit: ' : 'Loss: ') + 
-                                   '{{ currency_symbol }}' + Math.abs(value).toLocaleString();
-                        }
-                    }
-                }
+    // Cash Flow Chart
+    const cashFlowCtx = document.getElementById('cashFlowChart');
+    if (cashFlowCtx) {
+        new Chart(cashFlowCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: {{ cash_flow_labels|safe }},
+                datasets: [{
+                    label: 'Net Cash Flow', data: {{ cash_flow_data|safe }},
+                    backgroundColor: '#8B0000', borderColor: '#660000', borderWidth: 1
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '{{ currency_symbol }}' + value.toLocaleString();
-                        }
-                    }
-                }
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => `${c.parsed.y >= 0 ? 'Profit: ' : 'Loss: '}{{ currency_symbol }}${Math.abs(c.parsed.y).toLocaleString()}` } }
+                },
+                scales: { y: { beginAtZero: true, ticks: { callback: (v) => `{{ currency_symbol }}${v.toLocaleString()}` } } }
             }
-        }
-    });
+        });
+    }
 });
 </script>
 
 <!-- Professional Animated Styles -->
 <style>
-/* Welcome Section Animations */
+/* Welcome Section */
+.welcome-container {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+}
 .welcome-title {
     color: #2c3e50;
     font-weight: 700;
@@ -559,11 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-bottom: 0.5rem;
     min-height: 2.5rem;
 }
-
-.typing-text {
-    display: inline-block;
-}
-
+.typing-text { display: inline-block; }
 .cursor {
     display: inline-block;
     background-color: #2c3e50;
@@ -571,336 +358,151 @@ document.addEventListener('DOMContentLoaded', function() {
     width: 3px;
     animation: blink 1s infinite;
 }
-
-@keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0; }
-    100% { opacity: 1; }
-}
+@keyframes blink { 50% { opacity: 0; } }
 
 .welcome-subtitle {
     color: #6c757d;
     font-size: 1.1rem;
-    margin-bottom: 1rem;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeInUp 0.8s ease-out 2s forwards;
+    margin-bottom: 1.5rem;
 }
-
-.welcome-stats {
-    color: #495057;
-    font-size: 0.9rem;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeInUp 0.8s ease-out 2.5s forwards;
+.company-name-feather {
+    font-weight: 700;
+    color: #343a40;
+    position: relative;
+    z-index: 1;
+    text-shadow: 
+        0 0 4px rgba(255, 255, 255, 0.7),
+        0 0 8px rgba(255, 255, 255, 0.7),
+        0 0 12px rgba(0, 123, 255, 0.5),
+        0 0 16px rgba(0, 123, 255, 0.5);
 }
+.welcome-actions { margin-top: 1.5rem; }
 
-.welcome-actions {
-    margin-top: 1.5rem;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeInUp 0.8s ease-out 3s forwards;
-}
-
+/* Floating Metrics with Detached Shadow */
 .floating-metrics {
     display: flex;
     justify-content: center;
-    gap: 2rem;
+    gap: 2.5rem;
     flex-wrap: wrap;
 }
-
 .floating-metric {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 1px solid #dee2e6;
-    animation: float 3s ease-in-out infinite;
+    padding: 0.6rem 1.2rem;
+    background: #fff;
+    border-radius: 0.375rem;
+    animation: float 4s ease-in-out infinite;
+    position: relative;
+    box-shadow: 0 15px 25px -12px rgba(0, 0, 0, 0.2); /* Detached shadow */
+    transition: transform 0.3s ease;
 }
-
-.floating-metric:nth-child(2) {
-    animation-delay: 0.5s;
-}
-
-.floating-metric:nth-child(3) {
-    animation-delay: 1s;
-}
-
-.metric-icon {
-    font-size: 1.2rem;
-}
+.floating-metric:nth-child(2) { animation-delay: 0.5s; }
+.floating-metric:nth-child(3) { animation-delay: 1s; }
 
 .metric-text {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: #495057;
 }
 
 @keyframes float {
     0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-5px); }
+    50% { transform: translateY(-8px); }
 }
+
+/* Animations */
+.fade-in-up, .fade-in-up-delay {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+.fade-in-up { animation-delay: 1.8s; }
+.fade-in-up-delay { animation-delay: 2.2s; }
 
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.stat-highlight {
+/* Main Dashboard Container */
+.dashboard-main-container {
+    background: #ffffff;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+}
+
+.section-title {
+    font-size: 1rem;
     font-weight: 600;
-    color: #343a40;
-    display: inline-block;
-    animation: pulse 2s infinite;
+    color: #495057;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
 }
 
-.stat-highlight.pulse-delay-1 {
-    animation-delay: 0.3s;
-}
-
-.stat-highlight.pulse-delay-2 {
-    animation-delay: 0.6s;
-}
-
-@keyframes pulse {
-    0%, 100% { 
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% { 
-        transform: scale(1.05);
-        opacity: 0.8;
-    }
-}
-
-/* Fade in animations for other elements */
-.fade-in-up {
-    animation: fadeInUp 0.8s ease-out 2s forwards;
-}
-
-.fade-in-up-delay {
-    animation: fadeInUp 0.8s ease-out 2.5s forwards;
-}
-
-.fade-in-up-delay-2 {
-    animation: fadeInUp 0.8s ease-out 3s forwards;
-}
-
-/* Use existing metric card styles from professional-forms.css */
-.metric-card {
+/* Card and Content Box Styles */
+.metric-card, .content-box {
     background: #ffffff;
     border: 1px solid #e9ecef;
-    padding: 0;
-    height: 100%;
+    border-radius: 0.375rem;
 }
+.content-box { padding: 1rem; }
+.metric-card { padding: 0; }
 
 .metric-header {
     background: #f8f9fa;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid #e9ecef;
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
 }
+.metric-title { font-size: 14px; font-weight: 600; color: #495057; }
+.metric-body { padding: 1rem; }
+.metric-value { font-size: 1.5rem; font-weight: 700; color: #2c3e50; margin-bottom: 0.25rem; }
+.metric-subtitle { font-size: 12px; color: #6c757d; }
+.metric-value-small { font-size: 1.25rem; font-weight: 600; color: #2c3e50; margin-bottom: 0.25rem; }
+.metric-subtitle-small { font-size: 11px; color: #6c757d; }
 
-.metric-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #495057;
-}
-
-.metric-body {
+.chart-container {
+    position: relative;
+    height: 300px;
     padding: 1rem;
-}
-
-.metric-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 0.25rem;
-}
-
-.metric-subtitle {
-    font-size: 12px;
-    color: #6c757d;
-}
-
-.metric-value-small {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 0.25rem;
-}
-
-.metric-subtitle-small {
-    font-size: 11px;
-    color: #6c757d;
-}
-
-/* Activity list styling */
-.activity-list {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.activity-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.activity-item:last-child {
-    border-bottom: none;
-}
-
-.activity-title {
-    font-weight: 600;
-    font-size: 14px;
-    color: #2c3e50;
-}
-
-.activity-subtitle {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 2px;
-}
-
-.activity-date {
-    font-size: 11px;
-    color: #adb5bd;
-    margin-top: 2px;
-}
-
-.activity-amount {
-    font-weight: 600;
-    font-size: 14px;
-    color: #2c3e50;
-    text-align: right;
-}
-
-/* Alert sections */
-.alert-section {
-    border: 1px solid #ffc107;
-    background: #fff3cd;
-}
-
-.alert-header {
-    background: #ffc107;
-    color: #212529;
-}
-
-.alert-card {
-    background: #ffffff;
     border: 1px solid #e9ecef;
-    padding: 1rem;
+    border-radius: .375rem;
 }
 
-.alert-danger-minimal {
-    border-left: 3px solid #dc3545;
-}
+/* Activity list */
+.activity-list { max-height: 220px; overflow-y: auto; }
+.activity-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.75rem 0.25rem; border-bottom: 1px solid #f0f0f0; }
+.activity-item:last-child { border-bottom: none; }
+.activity-title { font-weight: 600; font-size: 14px; color: #2c3e50; }
+.activity-subtitle { font-size: 12px; color: #6c757d; margin-top: 2px; }
+.activity-date { font-size: 11px; color: #adb5bd; margin-top: 2px; }
+.activity-amount { font-weight: 600; font-size: 14px; color: #2c3e50; text-align: right; }
 
-.alert-warning-minimal {
-    border-left: 3px solid #ffc107;
-}
+/* Alert Card Styles */
+.alert-card { background: #ffffff; border: 1px solid #e9ecef; padding: 1rem; border-radius: .375rem; }
+.alert-danger-minimal { border-left: 4px solid #dc3545; }
+.alert-warning-minimal { border-left: 4px solid #ffc107; }
+.alert-title { font-weight: 600; font-size: 14px; color: #2c3e50; margin-bottom: 0.5rem; }
+.alert-content { font-size: 13px; color: #6c757d; margin-bottom: 0.75rem; }
+.alert-action { margin-top: 0.5rem; }
+.btn-alert-action { background: #343a40; color: white; font-size: 12px; padding: 6px 12px; }
+.btn-alert-action:hover { background: #23272b; color: white; }
+.btn-link-minimal { background: transparent; color: #6c757d; font-size: 12px; padding: 4px 8px; text-decoration: none; }
+.btn-link-minimal:hover { color: #495057; text-decoration: underline; }
 
-.alert-title {
-    font-weight: 600;
-    font-size: 14px;
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-}
+/* Icon box styles */
+.icon-box { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.bg-light-primary { background-color: rgba(13, 110, 253, 0.1); }
+.bg-light-success { background-color: rgba(40, 167, 69, 0.1); }
+.bg-light-warning { background-color: rgba(255, 193, 7, 0.1); }
+.bg-light-info { background-color: rgba(13, 202, 240, 0.1); }
 
-.alert-content {
-    font-size: 13px;
-    color: #6c757d;
-    margin-bottom: 0.75rem;
-}
-
-.alert-action {
-    margin-top: 0.5rem;
-}
-
-.btn-link-minimal {
-    background: transparent;
-    color: #6c757d;
-    font-size: 12px;
-    padding: 4px 8px;
-    text-decoration: none;
-}
-
-.btn-link-minimal:hover {
-    color: #495057;
-    text-decoration: underline;
-}
-
-.btn-alert-action {
-    background: #343a40;
-    color: white;
-    font-size: 12px;
-    padding: 6px 12px;
-}
-
-.btn-alert-action:hover {
-    background: #23272b;
-    color: white;
-}
-
-/* Professional responsive adjustments */
 @media (max-width: 768px) {
-    .welcome-title {
-        font-size: 1.5rem;
-    }
-    
-    .floating-metrics {
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .floating-metric {
-        width: 100%;
-        justify-content: center;
-        max-width: 250px;
-    }
-}
-
-/* Icon box styles for production section */
-.icon-box {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.bg-light-primary {
-    background-color: rgba(13, 110, 253, 0.1);
-}
-
-.bg-light-success {
-    background-color: rgba(40, 167, 69, 0.1);
-}
-
-.bg-light-warning {
-    background-color: rgba(255, 193, 7, 0.1);
-}
-
-.bg-light-info {
-    background-color: rgba(13, 202, 240, 0.1);
-}
-
-/* Card professional style if not already defined */
-.card-professional {
-    border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border: 1px solid #e9ecef;
+    .welcome-title { font-size: 1.5rem; }
+    .floating-metrics { flex-direction: column; align-items: center; gap: 1rem; }
+    .floating-metric { width: 100%; justify-content: center; max-width: 250px; }
+    .chart-container { height: 250px; }
 }
 </style>
 {% endblock %}

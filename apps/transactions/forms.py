@@ -8,6 +8,7 @@ from apps.inventory.models import InventoryItem
 from apps.customers.models import Customer
 from django.forms.widgets import Select
 from apps.accounts.models import Account, AccountType
+from .models import ExpenseLine
 
 class ItemSelectWidget(forms.Select):
     """
@@ -233,7 +234,7 @@ class TransactionForm(forms.ModelForm):
         cleaned_data = super().clean()
         use_line_items = cleaned_data.get('use_line_items')
         transaction_type = cleaned_data.get('transaction_type')
-        
+    
         is_simple_transaction = not use_line_items
 
         if is_simple_transaction:
@@ -242,18 +243,47 @@ class TransactionForm(forms.ModelForm):
             
             if transaction_type:
                 type_display = TransactionType.get_display_name(transaction_type)
-
-                if not category:
+                if not category and not self.data.get('expense_lines-TOTAL_FORMS'):
                     self.add_error('category', f'A category is required for simple {type_display.lower()}s.')
-                elif not category.default_account:
-                    self.add_error('category', f"The category '{category.name}' must have a linked default account. Please edit the category to proceed.")
-                elif not category.is_compatible_with_transaction_type(transaction_type):
-                    self.add_error('category', f"The category '{category.name}' is not compatible with {type_display} transactions.")
-            
-            if not total_amount or total_amount <= 0:
-                self.add_error('manual_total_amount', 'A positive total amount is required for simple transactions.')
+                
+                if not total_amount or total_amount <= 0:
+                    pass
         
         return cleaned_data
+
+class ExpenseLineForm(forms.ModelForm):
+    """
+    Form for a single expense split line.
+    """
+    class Meta:
+        model = ExpenseLine
+        fields = ['account', 'amount', 'description']
+        widgets = {
+            'account': forms.Select(attrs={'class': 'form-select'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control expense-amount', 'step': '0.01'}),
+            'description': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+        if company:
+            self.fields['account'].queryset = Account.objects.filter(
+                company=company,
+                account_type__category__in=[AccountType.Category.ASSET, AccountType.Category.EXPENSE]
+            ).order_by('account_number')
+        
+        for field in self.fields.values():
+            field.label = False
+
+ExpenseLineFormSet = inlineformset_factory(
+    Transaction,
+    ExpenseLine,
+    form=ExpenseLineForm,
+    extra=1,
+    can_delete=True,
+    can_delete_extra=True
+)
 
 class TransactionItemForm(forms.ModelForm):
     # A visible text input for searching inventory items

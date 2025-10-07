@@ -1,0 +1,192 @@
+/* static/assets/css/custom-overrides.css */
+/*
+ * FINAL OVERRIDE STYLESHEET V3
+ * Enforces a professional black/grey theme with specific color language for actions and statuses.
+*/
+
+/* =================================================================
+   0. GLOBAL & CONTAINER STYLES
+   ================================================================= */
+
+/* Enforce sharp edges on all elements, overriding any other styles */
+* {
+    border-radius: 0 !important;
+}
+
+
+/* =================================================================
+   1. MAIN LAYOUT BUTTONS (Header, Forms, etc.)
+   ================================================================= */
+
+/*
+ * These are the primary buttons OUTSIDE of table rows.
+ * Examples: "New Formula", "New Transaction", "Search", "Save", "Register".
+ * All are styled with the main dark grey theme.
+*/
+.btn-primary,
+.btn-success,
+.btn-info,
+.btn-create,
+.btn-execute,
+.btn.getstarted,
+.header-actions a[href*="transaction_create"],
+a.btn[href*="formula/new"],
+.btn-save {
+    background-color: #343a40 !important; /* Dark Grey */
+    border-color: #343a40 !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-success:hover,
+.btn-info:hover,
+.btn-create:hover,
+.btn-execute:hover,
+.btn.getstarted:hover,
+.header-actions a[href*="transaction_create"]:hover,
+a.btn[href*="formula/new"]:hover,
+.btn-save:hover {
+    background-color: #23272b !important; /* Darker Grey for hover */
+    border-color: #23272b !important;
+    color: #ffffff !important;
+}
+
+
+/* =================================================================
+   2. ACTION COLUMN BUTTONS (Inside Tables)
+   ================================================================= */
+
+/*
+ * These styles target the small buttons inside the "Actions" column of your tables.
+ * Each button has a distinct color for clear, immediate identification.
+*/
+
+/* --- View Button: Light Grey --- */
+.btn-view,
+a.btn.action-btn-view,
+a.btn[href*="/view"] {
+    background-color: #adb5bd !important; /* Light Grey */
+    border-color: #adb5bd !important;
+    color: #ffffff !important;
+}
+.btn-view:hover, a.btn[href*="/view"]:hover {
+    background-color: #90989f !important;
+    border-color: #90989f !important;
+}
+
+/* --- Edit Button: Dark Grey --- */
+.btn-edit,
+a.btn.action-btn-edit,
+a.btn[href*="/edit"] {
+    background-color: #5a6268 !important; /* Dark Grey */
+    border-color: #5a6268 !important;
+    color: #ffffff !important;
+}
+.btn-edit:hover, a.btn[href*="/edit"]:hover {
+    background-color: #494f54 !important;
+    border-color: #494f54 !important;
+}
+
+/* --- Delete Button: Dark Red --- */
+.btn-delete,
+a.btn.action-btn-delete,
+a.btn[href*="/delete"] {
+    background-color: #c82333 !important; /* Dark Red */
+    border-color: #c82333 !important;
+    color: #ffffff !important;
+}
+.btn-delete:hover, a.btn[href*="/delete"]:hover {
+    background-color: #a51d2a !important;
+    border-color: #a51d2a !important;
+}
+
+/* --- Produce Button: Green --- */
+.btn-produce,
+a.btn.action-btn-produce,
+a.btn[href*="/produce"] {
+    background-color: #198754 !important; /* Standard Green */
+    border-color: #198754 !important;
+    color: #ffffff !important;
+}
+.btn-produce:hover, a.btn[href*="/produce"]:hover {
+    background-color: #146c43 !important;
+    border-color: #146c43 !important;
+}
+
+
+/* =================================================================
+   3. STATUS & TYPE BADGES
+   ================================================================= */
+
+/*
+ * Styles for all status indicators. Uses a modern "faint background"
+ * approach for better readability and a clean, professional look.
+*/
+
+/* --- POSITIVE STATUS (Paid, Active, etc.) -> Faint Green --- */
+.status-paid,
+.status-active,
+.status-available,
+.badge.bg-success {
+    background-color: rgba(25, 135, 84, 0.15) !important;
+    color: #0f5132 !important;
+    border: 1px solid rgba(25, 135, 84, 0.2) !important;
+}
+
+/* --- NEGATIVE STATUS (Unpaid, Overdue, etc.) -> Faint Red/Pink --- */
+.status-unpaid,
+.status-overdue,
+.status-inactive,
+.badge.bg-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+    color: #842029 !important;
+    border: 1px solid rgba(220, 53, 69, 0.2) !important;
+}
+
+/* --- WARNING/NEUTRAL (Partially Paid, Pending) -> Faint Orange --- */
+.status-partially-paid,
+.status-pending,
+.badge.bg-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    color: #664d03 !important;
+    border: 1px solid rgba(255, 193, 7, 0.2) !important;
+}
+
+/* --- TYPE INDICATORS (Sale/Invoice, Purchase/Bill) -> Faint Grey --- */
+.status-sale-invoice,
+.status-purchase-bill,
+.badge.bg-info,
+.badge-secondary {
+    background-color: rgba(108, 117, 125, 0.15) !important;
+    color: #41464b !important;
+    border: 1px solid rgba(108, 117, 125, 0.2) !important;
+}
+
+
+/* =================================================================
+   4. LINK & NAVIGATION OVERRIDES
+   ================================================================= */
+
+/* General link color - remove default blue */
+a {
+    color: #2c3e50;
+}
+a:hover {
+    color: #000000;
+}
+
+/* Navbar active/hover link color */
+.navbar a:hover,
+.navbar .active,
+.navbar .active:focus,
+.navbar li:hover > a {
+    color: #000000 !important; /* Black for active/hover nav items */
+}
+
+/* Back to top button */
+.back-to-top {
+    background: #343a40 !important; /* Dark Grey */
+}
+.back-to-top:hover {
+    background: #5a6268 !important; /* Lighter Grey */
+}

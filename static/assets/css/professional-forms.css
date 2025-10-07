@@ -815,12 +815,12 @@
 }
 
 .action-btn-produce {
-    background-color: #28a745 !important; /* Green - matching the image */
+    background-color: #323634 !important; /* Green - matching the image */
     color: white !important;
 }
 
 .action-btn-produce:hover {
-    background-color: #218838 !important;
+    background-color: #323634 !important;
     color: white !important;
     text-decoration: none !important;
 }

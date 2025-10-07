@@ -9,7 +9,7 @@
   <section id="hero">
     <div class="hero-container">
       <h1 data-aos="zoom-in">Welcome To WJ-Accounting System</h1>
-      <h2 data-aos="fade-up">The All-in-One Platform for Invoicing, Inventory, and Financial Reporting.</h2>
+      <h2 data-aos="fade-up">The All-in-One Platform for Invoicing, Inventory, Production, and Financial Reporting.</h2>
       <a data-aos="fade-up" data-aos-delay="200" href="{% url 'subscriptions:register' %}" class="btn-get-started scrollto">Start Your Free Trial</a>
     </div>
   </section><!-- End Hero -->
@@ -40,6 +40,7 @@
               <ul>
                 <li><i class="bx bx-check-double"></i> Full Double-Entry system with a customizable Chart of Accounts.</li>
                 <li><i class="bx bx-check-double"></i> Track real-time inventory levels from purchase to sale.</li>
+                <li><i class="bx bx-check-double"></i> <strong>(New)</strong> Manage production formulas, manufacture finished goods, and track costs.</li>
                 <li><i class="bx bx-check-double"></i> Manage fixed assets and automatically calculate monthly depreciation.</li>
                 <li><i class="bx bx-check-double"></i> Generate professional invoices, track payments, and manage receivables.</li>
                 <li><i class="bx bx-check-double"></i> Produce key financial reports like Income Statements and Balance Sheets instantly.</li>
@@ -75,12 +76,18 @@
               <h4>Integrated Inventory Control</h4>
               <p>Track product stock from purchase orders to sales invoices. The system automatically updates inventory levels and posts Cost of Goods Sold (COGS) entries.</p>
             </div>
+            <!-- NEW: Production Module Feature Box -->
             <div class="icon-box mt-5" data-aos="fade-up" data-aos-delay="200">
+              <i class="bi bi-tools"></i>
+              <h4>Production & Manufacturing</h4>
+              <p>Define production formulas, manufacture finished goods from raw materials, and automatically calculate the unit cost for accurate profit analysis.</p>
+            </div>
+            <div class="icon-box mt-5" data-aos="fade-up" data-aos-delay="300">
               <i class="bi bi-building"></i>
               <h4>Asset & Depreciation Management</h4>
               <p>Record fixed assets, track their value, and let the system automatically post monthly depreciation entries to the correct accounts for you.</p>
             </div>
-            <div class="icon-box mt-5" data-aos="fade-up" data-aos-delay="300">
+            <div class="icon-box mt-5" data-aos="fade-up" data-aos-delay="400">
               <i class="bi bi-file-earmark-bar-graph"></i>
               <h4>Instant Financial Reporting</h4>
               <p>Generate essential reports like Trial Balance, Income Statement, and Balance Sheet with a single click, using real-time data from your transactions.</p>
@@ -181,6 +188,11 @@
                 {% for feature in plan.features %}
                   <li><i class="bx bx-check"></i> {{ feature }}</li>
                 {% endfor %}
+                
+                <!-- Add Production Module Feature for Deluxe and Premium Plans -->
+                {% if plan.code == 'DELUXE' or plan.code == 'PREMIUM' %}
+                <li><i class="bx bx-check"></i> <strong>Production Management</strong></li>
+                {% endif %}
               </ul>
 
               <div class="btn-wrap">

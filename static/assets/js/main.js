@@ -135,15 +135,15 @@
   /**
    * Mobile nav dropdowns activate
    */
-  on('click', '.navbar .dropdown > a', function(e) {
-    let navbar = select('#navbar')
-    if (navbar && navbar.classList.contains('navbar-mobile')) {
-      e.preventDefault()
-      if (this.nextElementSibling) {
-        this.nextElementSibling.classList.toggle('dropdown-active')
-      }
-    }
-  }, true)
+  // on('click', '.navbar .dropdown > a', function(e) {
+  //   let navbar = select('#navbar')
+  //   if (navbar && navbar.classList.contains('navbar-mobile')) {
+  //     e.preventDefault()
+  //     if (this.nextElementSibling) {
+  //       this.nextElementSibling.classList.toggle('dropdown-active')
+  //     }
+  //   }
+  // }, true)
 
   /**
    * Scroll with offset on links with a class name .scrollto

@@ -27,8 +27,9 @@ from apps.customers.models import Customer
 from apps.accounts.models import Account, AccountType
 from .constants import TransactionType
 
-from .models import TransactionCategory  # ADD THIS
-from .forms import TransactionCategoryForm  # ADD THIS
+from .models import TransactionCategory, ExpenseLine  
+from .forms import TransactionCategoryForm  
+from .forms import TransactionForm, TransactionItemFormSet, ExpenseLineFormSet
 
 
 def is_admin_user(user):
@@ -120,7 +121,6 @@ class TransactionListView(LoginRequiredMixin, RoleRequiredMixin, View):
         company = request.user.company
         transactions = Transaction.objects.filter(company=company).order_by('-date')
         
-        # Search functionality
         search_query = request.GET.get('search', '')
         if search_query:
             transactions = transactions.filter(
@@ -129,12 +129,10 @@ class TransactionListView(LoginRequiredMixin, RoleRequiredMixin, View):
                 Q(customer__name__icontains=search_query)
             )
         
-        # Filter by transaction type
         transaction_type = request.GET.get('type', '')
         if transaction_type:
             transactions = transactions.filter(transaction_type=transaction_type)
         
-        # Filter by payment status
         payment_status = request.GET.get('status', '')
         if payment_status == 'paid':
             transactions = transactions.filter(amount_paid__gte=F('total_amount'))
@@ -143,12 +141,10 @@ class TransactionListView(LoginRequiredMixin, RoleRequiredMixin, View):
         elif payment_status == 'partial':
             transactions = transactions.filter(amount_paid__gt=0, amount_paid__lt=F('total_amount'))
         
-        # Filter by customer
         customer_id = request.GET.get('customer', '')
         if customer_id:
             transactions = transactions.filter(customer_id=customer_id)
         
-        # Date range filter
         date_from = request.GET.get('date_from', '')
         date_to = request.GET.get('date_to', '')
         if date_from:
@@ -156,12 +152,10 @@ class TransactionListView(LoginRequiredMixin, RoleRequiredMixin, View):
         if date_to:
             transactions = transactions.filter(date__lte=date_to)
         
-        # Pagination
-        paginator = Paginator(transactions, 25)  # 25 transactions per page
+        paginator = Paginator(transactions, 25) 
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         
-        # Get filter options
         customers = Customer.objects.filter(company=company).order_by('name')
         
         context = {
@@ -177,7 +171,6 @@ class TransactionListView(LoginRequiredMixin, RoleRequiredMixin, View):
         }
         return render(request, 'transactions/transaction_list.html', context)
 
-# --- Transaction Detail View ---
 class TransactionDetailView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = [User.UserType.ADMIN, User.UserType.ACCOUNTANT, User.UserType.MANAGER, User.UserType.VIEWER]
     def get(self, request, pk):
@@ -199,7 +192,6 @@ class TransactionInvoiceView(LoginRequiredMixin, RoleRequiredMixin, DetailView):
     allowed_roles = [User.UserType.ADMIN, User.UserType.ACCOUNTANT, User.UserType.MANAGER, User.UserType.VIEWER]
 
     def get_queryset(self):
-        # Ensure users can only see invoices for their own company
         return Transaction.objects.filter(company=self.request.user.company)
 
     def get_context_data(self, **kwargs):
@@ -213,13 +205,20 @@ class TransactionCreateView(LoginRequiredMixin, RoleRequiredMixin, View):
 
     def get(self, request):
         form = TransactionForm(company=request.user.company, user=request.user)
-        formset = TransactionItemFormSet(
+        item_formset = TransactionItemFormSet(
             queryset=TransactionItem.objects.none(),
             form_kwargs={'company': request.user.company}
         )
+        expense_formset = ExpenseLineFormSet(
+            queryset=ExpenseLine.objects.none(),
+            prefix='expense_lines',
+            form_kwargs={'company': request.user.company}
+        )
+
         context = {
             'form': form,
-            'formset': formset,
+            'formset': item_formset,
+            'expense_formset': expense_formset,
             'page_title': 'Create New Transaction'
         }
         return render(request, self.template_name, context)
@@ -228,10 +227,15 @@ class TransactionCreateView(LoginRequiredMixin, RoleRequiredMixin, View):
         form = TransactionForm(request.POST, request.FILES, company=request.user.company, user=request.user)
         use_line_items = request.POST.get('use_line_items') == 'on'
         
-        formset = TransactionItemFormSet(request.POST, form_kwargs={'company': request.user.company}) if use_line_items else TransactionItemFormSet(queryset=TransactionItem.objects.none())
+        item_formset = TransactionItemFormSet(request.POST, form_kwargs={'company': request.user.company})
+        expense_formset = ExpenseLineFormSet(request.POST, prefix='expense_lines', form_kwargs={'company': request.user.company})
 
         is_form_valid = form.is_valid()
-        is_formset_valid = not use_line_items or formset.is_valid()
+        is_formset_valid = False
+        if use_line_items:
+            is_formset_valid = item_formset.is_valid()
+        else:
+            is_formset_valid = expense_formset.is_valid()
 
         if is_form_valid and is_formset_valid:
             try:
@@ -241,21 +245,27 @@ class TransactionCreateView(LoginRequiredMixin, RoleRequiredMixin, View):
                     transaction_obj.created_by = request.user
 
                     if use_line_items:
-                        # --- THIS LOGIC IS CORRECT ---
-                        # It iterates over cleaned_data, which only contains valid forms.
                         total = sum(
                             (item_data.get('quantity', 0) or 0) * (item_data.get('unit_price', 0) or 0)
-                            for item_data in formset.cleaned_data if item_data and not item_data.get('DELETE')
+                            for item_data in item_formset.cleaned_data if item_data and not item_data.get('DELETE')
                         )
                         transaction_obj.total_amount = total
                     else:
-                        transaction_obj.total_amount = form.cleaned_data.get('manual_total_amount', Decimal('0.00'))
+                        total = sum(
+                            item_data.get('amount', Decimal('0.00')) or Decimal('0.00')
+                            for item_data in expense_formset.cleaned_data if item_data and not item_data.get('DELETE')
+                        )
+                        transaction_obj.total_amount = total
+                        transaction_obj.category = None
 
                     transaction_obj.save()
 
                     if use_line_items:
-                        formset.instance = transaction_obj
-                        formset.save() # This is now safe because formset is valid
+                        item_formset.instance = transaction_obj
+                        item_formset.save()
+                    else:
+                        expense_formset.instance = transaction_obj
+                        expense_formset.save()
 
                     create_journal_entry_for_transaction(transaction_obj)
 
@@ -263,8 +273,13 @@ class TransactionCreateView(LoginRequiredMixin, RoleRequiredMixin, View):
                 return redirect('transactions:transaction_detail', pk=transaction_obj.pk)
             except Exception as e:
                 messages.error(request, f"An unexpected error occurred during save: {e}")
-        
-        context = {'form': form, 'formset': formset, 'page_title': 'Create New Transaction'}
+        context = {
+            'form': form, 
+            'formset': item_formset, 
+            'expense_formset': expense_formset,
+            'page_title': 'Create New Transaction'
+        }
+        return render(request, self.template_name, context)
         return render(request, self.template_name, context)
     
 class TransactionUpdateView(LoginRequiredMixin, RoleRequiredMixin, View):
@@ -274,13 +289,20 @@ class TransactionUpdateView(LoginRequiredMixin, RoleRequiredMixin, View):
     def get(self, request, pk):
         transaction_obj = get_object_or_404(Transaction, pk=pk, company=request.user.company)
         form = TransactionForm(instance=transaction_obj, company=request.user.company, user=request.user)
-        formset = TransactionItemFormSet(
+        item_formset = TransactionItemFormSet(
             instance=transaction_obj,
             form_kwargs={'company': request.user.company}
         )
+        expense_formset = ExpenseLineFormSet(
+            instance=transaction_obj,
+            prefix='expense_lines',
+            form_kwargs={'company': request.user.company}
+        )
+
         context = {
             'form': form,
-            'formset': formset,
+            'formset': item_formset,
+            'expense_formset': expense_formset,
             'transaction': transaction_obj,
             'page_title': f'Edit Transaction #{transaction_obj.id}'
         }
@@ -291,41 +313,54 @@ class TransactionUpdateView(LoginRequiredMixin, RoleRequiredMixin, View):
         form = TransactionForm(request.POST, request.FILES, instance=transaction_obj, company=request.user.company, user=request.user)
         use_line_items = request.POST.get('use_line_items') == 'on'
 
-        formset = TransactionItemFormSet(
+        item_formset = TransactionItemFormSet(
             request.POST, 
             instance=transaction_obj, 
             form_kwargs={'company': request.user.company}
-        ) if use_line_items else TransactionItemFormSet(
+        )
+        expense_formset = ExpenseLineFormSet(
+            request.POST, 
             instance=transaction_obj, 
-            queryset=TransactionItem.objects.none()
+            prefix='expense_lines',
+            form_kwargs={'company': request.user.company}
         )
 
         is_form_valid = form.is_valid()
-        is_formset_valid = not use_line_items or formset.is_valid()
+        is_formset_valid = False
+        if use_line_items:
+            is_formset_valid = item_formset.is_valid()
+        else:
+            is_formset_valid = expense_formset.is_valid()
 
         if is_form_valid and is_formset_valid:
             try:
                 with transaction.atomic():
                     updated_transaction = form.save(commit=False)
-                    updated_transaction.updated_by = request.user  # ADD THIS LINE
+                    updated_transaction.updated_by = request.user
                     
                     if use_line_items:
-                        # Calculate total from valid formset data
                         total = sum(
                             (item_data.get('quantity', 0) or 0) * (item_data.get('unit_price', 0) or 0)
-                            for item_data in formset.cleaned_data 
+                            for item_data in item_formset.cleaned_data 
                             if item_data and not item_data.get('DELETE')
                         )
                         updated_transaction.total_amount = total
                     else:
-                        updated_transaction.total_amount = form.cleaned_data.get('manual_total_amount', Decimal('0.00'))
+                        total = sum(
+                            item_data.get('amount', Decimal('0.00')) or Decimal('0.00')
+                            for item_data in expense_formset.cleaned_data 
+                            if item_data and not item_data.get('DELETE')
+                        )
+                        updated_transaction.total_amount = total
+                        updated_transaction.category = None 
                     
                     updated_transaction.save()
 
                     if use_line_items:
-                        formset.save()
+                        item_formset.save()
+                        updated_transaction.expense_lines.all().delete()
                     else:
-                        # If not using line items, delete any existing ones
+                        expense_formset.save()
                         updated_transaction.items.all().delete()
 
                     create_journal_entry_for_transaction(updated_transaction)
@@ -337,7 +372,8 @@ class TransactionUpdateView(LoginRequiredMixin, RoleRequiredMixin, View):
 
         context = {
             'form': form, 
-            'formset': formset, 
+            'formset': item_formset, 
+            'expense_formset': expense_formset,
             'transaction': transaction_obj, 
             'page_title': f'Edit Transaction #{transaction_obj.id}'
         }

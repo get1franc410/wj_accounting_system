@@ -182,6 +182,24 @@ class Transaction(models.Model):
         if self.customer:
             self.customer.update_balances()
 
+class ExpenseLine(models.Model):
+    """
+    Represents a single line in a split transaction, allocating a portion
+    of the total amount to a specific expense or asset account.
+    """
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='expense_lines')
+    account = models.ForeignKey(
+        'accounts.Account',
+        on_delete=models.PROTECT,
+        related_name='expense_lines',
+        help_text="The expense or asset account to debit."
+    )
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    description = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"Split for {self.account.name} - {self.amount}"
+    
 class TransactionItem(models.Model):
     """
     Represents a single line item within a Transaction (e.g., a product on an invoice).

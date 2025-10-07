@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="container my-4">
-    <!-- Page Header (Matches Transactions page style) -->
+    <!-- Page Header -->
     <div class="page-header">
         <div>
             <h2>Choose Your Plan</h2>
@@ -17,35 +17,30 @@
     <!-- Main Content Card -->
     <div class="card shadow-sm">
         <div class="card-body p-4">
-            <!-- Pricing Cards -->
+            
+            <!-- Free Trial Promo Section -->
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-10 text-center">
+                    <div class="free-trial-promo p-4" style="background-color: #f1f7ff;">
+                        <h3 style="font-weight: 600;">Not Ready to Commit?</h3>
+                        <p class="lead">
+                            Explore all our features with a full-access, 30-day free trial. No credit card required.
+                        </p>
+                        <a href="{% url 'subscriptions:register_form' 'TRIAL' %}" class="btn btn-success btn-lg">Start Your Free Trial</a>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Paid Plans Section -->
+            <h3 class="text-center my-4">Our Annual Plans</h3>
             <div class="row justify-content-center g-4">
                 {% for plan in plans %}
-                    {% if plan.code == 'TRIAL' %}
-                    <!-- --- Special Card for Free Trial --- -->
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card h-100 shadow-sm plan-card border-success">
-                            <div class="card-header text-center bg-success text-white">
-                                <h4 class="my-0 fw-normal">{{ plan.name }}</h4>
-                            </div>
-                            <div class="card-body d-flex flex-column">
-                                <h1 class="card-title pricing-card-title text-center">
-                                    $0<small class="text-muted fw-light">/30 days</small>
-                                </h1>
-                                <h5 class="text-center text-muted mb-4">&nbsp;</h5>
-                                <ul class="list-unstyled mt-3 mb-4 flex-grow-1">
-                                    {% for feature in plan.features %}
-                                    <li><i class="bi bi-check text-success"></i> {{ feature }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <a href="{% url 'subscriptions:register_form' plan_code=plan.code %}" class="btn btn-lg btn-success w-100">Start Free Trial</a>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Existing Card for Paid Plans -->
+                    {% if plan.code != 'TRIAL' %}
                     <div class="col-lg-3 col-md-6">
                         <div class="card h-100 shadow-sm plan-card">
-                            <div class="card-header text-center">
+                            <div class="card-header text-center {% if plan.code == 'STANDARD' %}bg-dark text-white{% endif %}">
                                 <h4 class="my-0 fw-normal">{{ plan.name }}</h4>
                             </div>
                             <div class="card-body d-flex flex-column">
@@ -59,6 +54,7 @@
                                 {% else %}
                                 <h5 class="text-center text-muted mb-4">&nbsp;</h5>
                                 {% endif %}
+                                
                                 <ul class="list-unstyled mt-3 mb-4 flex-grow-1">
                                     {% for feature in plan.features %}
                                     <li><i class="bi bi-check text-success"></i> {{ feature }}</li>
@@ -66,7 +62,7 @@
                                     
                                     <!-- Add Production Module Feature for Deluxe and Premium Plans -->
                                     {% if plan.code == 'DELUXE' or plan.code == 'PREMIUM' %}
-                                    <li><i class="bi bi-check text-success"></i> <strong>Production Management Module</strong></li>
+                                    <li><i class="bi bi-check text-success"></i> <strong>Production Management</strong></li>
                                     {% endif %}
                                 </ul>
                                 <a href="{% url 'subscriptions:register_form' plan_code=plan.code %}" class="btn btn-dark w-100">Select Plan & Register</a>
@@ -81,9 +77,9 @@
 
             <!-- Payment Information Section -->
             <div id="payment-info">
-                <h4 class="text-center mb-3"><i class="bi bi-wallet2 me-2"></i>Payment Instructions</h4>
+                <h4 class="text-center mb-3"><i class="bi bi-wallet2 me-2"></i>Payment Instructions for Paid Plans</h4>
                 <div class="alert alert-danger text-center">
-                    <i class="bi bi-exclamation-circle-fill"></i> <strong>Important:</strong> For paid plans, please make your payment *before* proceeding. You will need to upload the receipt on the next page.
+                    <i class="bi bi-exclamation-circle-fill"></i> <strong>Important:</strong> Please make your payment *before* proceeding to the registration form. You will be required to upload the receipt to complete your registration.
                 </div>
                 
                 <div class="row justify-content-center mt-4">
@@ -122,5 +118,6 @@
 .plan-card:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
 .page-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e9ecef; }
 .page-header h2 { font-weight: 600; margin: 0; }
+.free-trial-promo { border-radius: 0 !important; } /* Match sharp edges theme */
 </style>
 {% endblock %}

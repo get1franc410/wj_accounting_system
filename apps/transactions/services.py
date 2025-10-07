@@ -48,32 +48,34 @@ def get_expense_account(company):
         account_type__category=AccountType.Category.EXPENSE
     ).first()
 
-# UPDATED MAIN FUNCTION
 @db_transaction.atomic
 def create_journal_entry_for_transaction(transaction_instance):
     """
-    🔧 FIXED VERSION - Addresses negative balances and unbalanced sheets
-    Keeps all existing inventory management logic
+    🔧 FIXED & ENHANCED VERSION
+    - Creates journal entries for all transaction types.
+    - Handles both inventory line items and expense splits.
+    - Keeps all existing inventory management and COGS logic.
     """
     company = transaction_instance.company
     total_amount = round_currency(transaction_instance.total_amount)
     amount_paid = round_currency(transaction_instance.amount_paid or Decimal('0.00'))
 
-    # DELETE EXISTING JOURNAL ENTRIES FOR THIS TRANSACTION (IMPROVED)
+    # Delete any previous journal entry to ensure a clean slate
     JournalEntry.objects.filter(
         company=company,
         description__contains=f"Transaction #{transaction_instance.id}"
     ).delete()
 
-    # RESET THE JOURNAL ENTRY REFERENCE
+    # Unlink from the transaction object itself
     transaction_instance.journal_entry = None
     transaction_instance.save(update_fields=['journal_entry'])
 
+    # Do not create a journal entry for zero-value transactions
     if total_amount <= 0:
-        return None  # No journal entry for zero amount transactions
+        return None 
 
     try:
-        # CREATE NEW JOURNAL ENTRY WITH BETTER DESCRIPTION
+        # Create the main Journal Entry record
         je = JournalEntry.objects.create(
             company=company,
             date=transaction_instance.date,
@@ -81,7 +83,7 @@ def create_journal_entry_for_transaction(transaction_instance):
             created_by=getattr(transaction_instance, 'created_by', None)
         )
         
-        # LINK THE JOURNAL ENTRY TO THE TRANSACTION
+        # Link the new journal entry back to the transaction
         transaction_instance.journal_entry = je
         transaction_instance.save(update_fields=['journal_entry'])
 
@@ -90,11 +92,11 @@ def create_journal_entry_for_transaction(transaction_instance):
         if not cash_account:
             raise ValidationError("No cash/bank account found for this company.")
 
+        # Determine if the transaction uses inventory line items or expense splits
         has_line_items = transaction_instance.items.exists()
 
-        # --- 1. SALE LOGIC (FIXED) ---
+        # --- 1. SALE LOGIC (No changes here, remains as is) ---
         if transaction_instance.transaction_type == 'SALE':
-            # 🔧 FIX: Use system accounts instead of customer-specific accounts
             try:
                 ar_account = Account.objects.get(
                     company=company,
@@ -123,14 +125,13 @@ def create_journal_entry_for_transaction(transaction_instance):
                     description=f"Sale to {transaction_instance.customer.name if transaction_instance.customer else 'Customer'}"
                 )
 
-            # Credit side (Income) and COGS - KEEP YOUR EXISTING LOGIC
+            # Credit side (Income) and COGS
             total_cogs = Decimal('0.00')
             
             if has_line_items:
                 for line_item in transaction_instance.items.all():
                     income_account = line_item.item.income_account
                     if not income_account:
-                        # Fallback to default revenue account
                         income_account = get_revenue_account(company)
                         if not income_account:
                             raise ValidationError("No revenue account available")
@@ -143,66 +144,49 @@ def create_journal_entry_for_transaction(transaction_instance):
                         description=f"Sale of {line_item.item.name}"
                     )
 
-                    # --- INVENTORY MOVEMENT (KEEP YOUR EXISTING LOGIC) ---
+                    # --- INVENTORY MOVEMENT ---
                     if line_item.item.item_type == InventoryItem.PRODUCT:
-                        # Create inventory transaction (stock out)
                         InventoryTransaction.objects.create(
-                            company=company,
-                            item=line_item.item,
+                            company=company, item=line_item.item,
                             transaction_type=InventoryTransaction.SALE,
                             quantity=line_item.quantity,
                             transaction_date=transaction_instance.date,
                             notes=f"Sale via Transaction #{transaction_instance.id}"
                         )
-                        # Update stock
                         line_item.item.quantity_on_hand -= line_item.quantity
                         line_item.item.save(update_fields=['quantity_on_hand'])
                         
-                        # 🔧 FIX: Use current_average_cost if available, otherwise purchase_price
                         item_cost = getattr(line_item.item, 'current_average_cost', line_item.item.purchase_price or Decimal('0.00'))
                         total_cogs += round_currency(item_cost * line_item.quantity)
             else:
-                # Simple sale without line items
                 if not transaction_instance.category or not transaction_instance.category.default_account:
-                    raise ValidationError(
-                        "A category with a linked default account is required for simple sales."
-                    )
-                
+                    raise ValidationError("A category with a linked default account is required for simple sales.")
                 revenue_account = transaction_instance.category.default_account
-                
                 JournalEntryLine.objects.create(
-                    journal_entry=je, 
-                    account=revenue_account, 
-                    debit=Decimal('0.00'), 
-                    credit=total_amount,
+                    journal_entry=je, account=revenue_account, 
+                    debit=Decimal('0.00'), credit=total_amount,
                     description=f"Sales revenue from {transaction_instance.description or 'simple sale'}"
                 )
 
-            # COGS Entry (KEEP YOUR EXISTING LOGIC)
+            # COGS Entry
             if total_cogs > 0:
                 try:
                     cogs_account = Account.objects.get(company=company, system_account=Account.SystemAccount.COST_OF_GOODS_SOLD)
                     inventory_asset_account = Account.objects.get(company=company, system_account=Account.SystemAccount.INVENTORY_ASSET)
                     JournalEntryLine.objects.create(
-                        journal_entry=je, 
-                        account=cogs_account, 
-                        debit=total_cogs, 
-                        credit=Decimal('0.00'),
+                        journal_entry=je, account=cogs_account, 
+                        debit=total_cogs, credit=Decimal('0.00'),
                         description="Cost of goods sold"
                     )
                     JournalEntryLine.objects.create(
-                        journal_entry=je, 
-                        account=inventory_asset_account, 
-                        debit=Decimal('0.00'), 
-                        credit=total_cogs,
+                        journal_entry=je, account=inventory_asset_account, 
+                        debit=Decimal('0.00'), credit=total_cogs,
                         description="Inventory reduction"
                     )
                 except Account.DoesNotExist:
                     pass
 
-        # --- 2. PURCHASE LOGIC (FIXED) ---
         elif transaction_instance.transaction_type == 'PURCHASE':
-            # 🔧 FIX: Use system accounts
             try:
                 ap_account = Account.objects.get(
                     company=company,
@@ -231,36 +215,31 @@ def create_journal_entry_for_transaction(transaction_instance):
                     description=f"Purchase from {transaction_instance.customer.name if transaction_instance.customer else 'Vendor'}"
                 )
 
-            # Debit side (what was purchased) - KEEP YOUR EXISTING LOGIC
-            if has_line_items:
+            # --- START: REPLACED BLOCK ---
+            # Debit side (what was purchased)
+            if has_line_items: # This means inventory items were used
                 for line_item in transaction_instance.items.all():
                     if line_item.item.item_type == InventoryItem.PRODUCT:
                         asset_account = line_item.item.asset_account
                         if not asset_account:
-                            # Fallback to system inventory account
                             try:
                                 asset_account = Account.objects.get(company=company, system_account=Account.SystemAccount.INVENTORY_ASSET)
                             except Account.DoesNotExist:
                                 raise ValidationError("No inventory asset account found")
                         
                         JournalEntryLine.objects.create(
-                            journal_entry=je, 
-                            account=asset_account, 
-                            debit=round_currency(line_item.line_total), 
-                            credit=Decimal('0.00'),
+                            journal_entry=je, account=asset_account, 
+                            debit=round_currency(line_item.line_total), credit=Decimal('0.00'),
                             description=f"Purchase of {line_item.item.name}"
                         )
                         
-                        # --- INVENTORY MOVEMENT (KEEP YOUR EXISTING LOGIC) ---
                         InventoryTransaction.objects.create(
-                            company=company,
-                            item=line_item.item,
+                            company=company, item=line_item.item,
                             transaction_type=InventoryTransaction.PURCHASE,
                             quantity=line_item.quantity,
                             transaction_date=transaction_instance.date,
                             notes=f"Purchase via Transaction #{transaction_instance.id}"
                         )
-                        # Update stock
                         line_item.item.quantity_on_hand += line_item.quantity
                         line_item.item.save(update_fields=['quantity_on_hand'])
                     else: # Service
@@ -271,36 +250,20 @@ def create_journal_entry_for_transaction(transaction_instance):
                                 raise ValidationError("No expense account found")
                         
                         JournalEntryLine.objects.create(
-                            journal_entry=je, 
-                            account=expense_account, 
-                            debit=round_currency(line_item.line_total), 
-                            credit=Decimal('0.00'),
+                            journal_entry=je, account=expense_account, 
+                            debit=round_currency(line_item.line_total), credit=Decimal('0.00'),
                             description=f"Purchase of {line_item.item.name}"
                         )
-            else:
-                # Simple purchase (no line items)
-                if transaction_instance.category and transaction_instance.category.default_account:
-                    purchase_account = transaction_instance.category.default_account
-                else:
-                    # Fallback to inventory account
-                    try:
-                        purchase_account = Account.objects.get(company=company, system_account=Account.SystemAccount.INVENTORY_ASSET)
-                    except Account.DoesNotExist:
-                        purchase_account = get_expense_account(company)
-                        if not purchase_account:
-                            raise ValidationError("No purchase account found")
-                
-                JournalEntryLine.objects.create(
-                    journal_entry=je, 
-                    account=purchase_account, 
-                    debit=total_amount, 
-                    credit=Decimal('0.00'),
-                    description="Purchase"
-                )
-
-        # --- 3. EXPENSE LOGIC (KEEP YOUR EXISTING LOGIC) ---
+            else: 
+                for line in transaction_instance.expense_lines.all():
+                    JournalEntryLine.objects.create(
+                        journal_entry=je, 
+                        account=line.account, 
+                        debit=round_currency(line.amount), 
+                        credit=Decimal('0.00'),
+                        description=line.description or f"Purchase allocation to {line.account.name}"
+                    )
         elif transaction_instance.transaction_type == 'EXPENSE':
-            # Credit side (Cash)
             if total_amount > 0:
                 JournalEntryLine.objects.create(
                     journal_entry=je, 
@@ -310,8 +273,7 @@ def create_journal_entry_for_transaction(transaction_instance):
                     description="Cash payment for expense"
                 )
 
-            # Debit side (what was expensed) - KEEP YOUR EXISTING LOGIC
-            if has_line_items:
+            if has_line_items: 
                 for line_item in transaction_instance.items.all():
                     expense_account = line_item.item.expense_account
                     if not expense_account:
@@ -327,11 +289,9 @@ def create_journal_entry_for_transaction(transaction_instance):
                         description=f"Expense for {line_item.item.name}"
                     )
 
-                    # --- INVENTORY MOVEMENT for EXPENSE (KEEP YOUR EXISTING LOGIC) ---
                     if line_item.item.item_type == InventoryItem.PRODUCT:
                         InventoryTransaction.objects.create(
-                            company=company,
-                            item=line_item.item,
+                            company=company, item=line_item.item,
                             transaction_type=InventoryTransaction.ADJUSTMENT_OUT,
                             quantity=line_item.quantity,
                             transaction_date=transaction_instance.date,
@@ -339,25 +299,16 @@ def create_journal_entry_for_transaction(transaction_instance):
                         )
                         line_item.item.quantity_on_hand -= line_item.quantity
                         line_item.item.save(update_fields=['quantity_on_hand'])
-            else:
-                if transaction_instance.category and transaction_instance.category.default_account:
-                    expense_account = transaction_instance.category.default_account
-                else:
-                    expense_account = get_expense_account(company)
-                    if not expense_account:
-                        raise ValidationError("No expense account found")
-                
-                JournalEntryLine.objects.create(
-                    journal_entry=je, 
-                    account=expense_account, 
-                    debit=total_amount, 
-                    credit=Decimal('0.00'),
-                    description="General expense"
-                )
-
-        # --- 4. PAYMENT/RECEIPT LOGIC (FIXED) ---
+            else: 
+                for line in transaction_instance.expense_lines.all():
+                    JournalEntryLine.objects.create(
+                        journal_entry=je, 
+                        account=line.account, 
+                        debit=round_currency(line.amount), 
+                        credit=Decimal('0.00'),
+                        description=line.description or f"Expense allocation to {line.account.name}"
+                    )
         elif transaction_instance.transaction_type in ['PAYMENT', 'Payment Receipt']:
-            # 🔧 FIX: Use system AR account
             try:
                 ar_account = Account.objects.get(
                     company=company,
@@ -366,7 +317,6 @@ def create_journal_entry_for_transaction(transaction_instance):
             except Account.DoesNotExist:
                 raise ValidationError("Accounts Receivable system account not found")
             
-            # Debit: Cash (payment received)
             if total_amount > 0:
                 JournalEntryLine.objects.create(
                     journal_entry=je, 
@@ -376,7 +326,6 @@ def create_journal_entry_for_transaction(transaction_instance):
                     description=f"Payment received from {transaction_instance.customer.name if transaction_instance.customer else 'Customer'}"
                 )
             
-            # Credit: Accounts Receivable (reduce customer balance)
             JournalEntryLine.objects.create(
                 journal_entry=je, 
                 account=ar_account, 
@@ -385,14 +334,12 @@ def create_journal_entry_for_transaction(transaction_instance):
                 description=f"Payment from {transaction_instance.customer.name if transaction_instance.customer else 'Customer'}"
             )
 
-        # FINAL VALIDATION TO ENSURE THE ENTRY IS BALANCED
         je.validate_balance()
             
         return je
 
     except Exception as e:
-        # Clean up if there's an error
-        if 'je' in locals():
+        if 'je' in locals() and je.pk:
             je.delete()
         transaction_instance.journal_entry = None
         transaction_instance.save(update_fields=['journal_entry'])

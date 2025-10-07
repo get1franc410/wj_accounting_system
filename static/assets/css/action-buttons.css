@@ -1,9 +1,9 @@
 /* --- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\static\assets\css\action-buttons.css --- */
 
 .btn-save, .btn-create, .btn-execute {
-    background-color: #198754; /* Green */
+    background-color: #323634; /* Green */
     color: white;
-    border: 1px solid #198754;
+    border: 1px solid #323634;
     padding: 8px 20px;
     border-radius: 6px;
     font-weight: 500;
@@ -11,9 +11,8 @@
 }
 
 .btn-save:hover, .btn-create:hover, .btn-execute:hover {
-    background-color: #146c43;
-    border-color: #13653f;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    background-color: #23272b;
+    border-color: #23272b;
 }
 
 .btn-save:disabled, .btn-execute:disabled {

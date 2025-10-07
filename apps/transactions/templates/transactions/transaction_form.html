@@ -18,9 +18,11 @@
 
     <!-- Main Form Container -->
     <div class="form-container">
-        <form method="post" enctype="multipart/form-data" id="transaction-form">
+        <form method="post" enctype="multipart/form-data" id="transaction-form" novalidate>
             {% csrf_token %}
-            <input type="hidden" name="calculated_total" id="calculated_total" value="0.00">
+            
+            <!-- Hidden field for total amount, used by backend -->
+            <input type="hidden" name="total_amount" id="calculated_total" value="{{ transaction.total_amount|default:'0.00' }}">
             
             <!-- Transaction Details Section -->
             <div class="form-section mb-4">
@@ -40,7 +42,7 @@
                         <div class="col-md-2">{{ form.due_date|as_crispy_field }}</div>
                     </div>
                     <div class="row">
-                        <div class="col-md-3">{{ form.category|as_crispy_field }}</div>
+                        <div class="col-md-3" id="category-wrapper">{{ form.category|as_crispy_field }}</div>
                         <div class="col-md-3">{{ form.reference_number|as_crispy_field }}</div>
                         <div class="col-md-6">{{ form.description|as_crispy_field }}</div>
                     </div>
@@ -50,7 +52,7 @@
                 </div>
             </div>
 
-            <!-- Line Items / Manual Total Section -->
+            <!-- Line Items / Splits Section -->
             <div class="form-section mb-4">
                 <div class="section-header">
                     <div class="d-flex justify-content-between align-items-center">
@@ -58,119 +60,177 @@
                         <div class="form-check form-switch">
                             {{ form.use_line_items }}
                             <label class="form-check-label" for="{{ form.use_line_items.id_for_label }}">
-                                Use Line Items
+                                Use Inventory Items
                             </label>
                         </div>
                     </div>
                 </div>
-                <div class="section-body">
-                    <!-- ✅ FIX: Line Items Table Structure Updated -->
-                    <div id="line-items-section" {% if not form.use_line_items.value %}style="display:none"{% endif %}>
-                        <table class="table table-minimal" id="line-items-table">
-                            <thead>
-                                <tr>
-                                    <th style="width:25%">Item/Product</th>
-                                    <th style="width:25%">Description</th>
-                                    <th style="width:8%; text-align:center;">Unit</th>
-                                    <th style="width:10%; text-align:center;">Available</th>
-                                    <th style="width:10%">Quantity</th>
-                                    <th style="width:12%">Unit Price</th>
-                                    <th style="width:10%; text-align:right;">Total</th>
-                                    <th style="width:5%"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="formset-container">
-                                {% for form in formset.forms %}
-                                    <tr class="line-item-row formset-row" id="form-{{ forloop.counter0 }}">
-                                        <!-- ✅ FIX: Removed |as_crispy_field to prevent layout breaking -->
-                                        <td>
-                                            <div class="position-relative">
-                                                {{ form.item_search }}
-                                                {{ form.item }}
-                                            </div>
-                                        </td>
-                                        <td>{{ form.description }}</td>
-                                        <td><span class="unit-display text-muted small d-block text-center pt-2"></span></td>
-                                        <td><span class="available-qty-display text-muted small d-block text-center pt-2"></span></td>
-                                        <td>{{ form.quantity }}</td>
-                                        <td>{{ form.unit_price }}</td>
-                                        <td class="line-total-display text-end pt-2">0.00</td>
-                                        <td class="text-center pt-1">
-                                            <!-- ✅ FIX: Every row now gets a remove button -->
-                                            <button type="button" class="btn btn-danger btn-sm btn-remove remove-row-btn" title="Remove Row">×</button>
-                                        </td>
-                                        {{ form.id }}
-                                        {% if form.DELETE %}<input type="hidden" name="{{ form.DELETE.html_name }}" id="{{ form.DELETE.id_for_label }}">{% endif %}
+                <div class="section-body p-0">
+                    <!-- Inventory Line Items Table -->
+                    <div id="line-items-section" style="display:none;">
+                        <div class="table-responsive">
+                            <table class="table table-minimal" id="line-items-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:25%">Item/Product</th>
+                                        <th style="width:25%">Description</th>
+                                        <th style="width:8%; text-align:center;">Unit</th>
+                                        <th style="width:10%; text-align:center;">Available</th>
+                                        <th style="width:10%">Quantity</th>
+                                        <th style="width:12%">Unit Price</th>
+                                        <th style="width:10%; text-align:right;">Total</th>
+                                        <th style="width:5%"></th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                            <!-- ✅ FIX: Added a table footer for the "Add" button -->
-                            <tfoot>
-                                <tr>
-                                    <td colspan="8">
-                                        <button type="button" class="btn btn-secondary btn-sm" id="add-row-btn">
-                                            + Add New Line
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                </thead>
+                                <tbody class="formset-container">
+                                    {% for item_form in formset.forms %}
+                                        <tr class="line-item-row formset-row" id="form-{{ forloop.counter0 }}">
+                                            <td>
+                                                <div class="position-relative">
+                                                    {{ item_form.item_search }}
+                                                    {{ item_form.item }}
+                                                </div>
+                                            </td>
+                                            <td>{{ item_form.description }}</td>
+                                            <td><span class="unit-display text-muted small d-block text-center pt-2"></span></td>
+                                            <td><span class="available-qty-display text-muted small d-block text-center pt-2"></span></td>
+                                            <td>{{ item_form.quantity }}</td>
+                                            <td>{{ item_form.unit_price }}</td>
+                                            <td class="line-total-display text-end pt-2">0.00</td>
+                                            <td class="text-center pt-1">
+                                                <button type="button" class="btn btn-danger btn-sm btn-remove remove-row-btn" title="Remove Row">×</button>
+                                            </td>
+                                            {{ item_form.id }}
+                                            {% if item_form.DELETE %}<input type="hidden" name="{{ item_form.DELETE.html_name }}" id="{{ item_form.DELETE.id_for_label }}">{% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="8">
+                                            <button type="button" class="btn btn-secondary btn-sm" id="add-row-btn">
+                                                + Add Item Line
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                         {{ formset.management_form }}
-                        
-                        <!-- ✅ FIX: Template for new formset rows, hidden and corrected -->
-                        <template id="empty-form-template">
-                            <tr class="line-item-row formset-row" id="form-__prefix__">
-                                <td>
-                                    <div class="position-relative">
-                                        {{ formset.empty_form.item_search }}
-                                        {{ formset.empty_form.item }}
+                    </div>
+
+                    <!-- Expense Split Table -->
+                    <div id="expense-lines-section" style="display:none;">
+                        <div class="p-3 border-bottom">
+                            <p class="text-muted small mb-0">Allocate the total amount across multiple expense or asset accounts. The category field will be ignored.</p>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-minimal" id="expense-lines-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:45%">Account</th>
+                                        <th style="width:20%">Amount</th>
+                                        <th style="width:30%">Description</th>
+                                        <th style="width:5%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="expense-formset-container">
+                                    {% for expense_form in expense_formset.forms %}
+                                        <tr class="expense-line-row formset-row">
+                                            <td>{{ expense_form.account }}</td>
+                                            <td>{{ expense_form.amount }}</td>
+                                            <td>{{ expense_form.description }}</td>
+                                            <td class="text-center pt-1">
+                                                <button type="button" class="btn btn-danger btn-sm btn-remove remove-expense-row-btn" title="Remove Row">×</button>
+                                            </td>
+                                            {{ expense_form.id }}
+                                            {% if expense_form.DELETE %}<input type="hidden" name="{{ expense_form.DELETE.html_name }}" id="{{ expense_form.DELETE.id_for_label }}">{% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4">
+                                            <button type="button" class="btn btn-secondary btn-sm" id="add-expense-row-btn">
+                                                + Add Account Line
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        {{ expense_formset.management_form }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary & Payment Section -->
+            <div class="form-section">
+                 <div class="section-header"><h5 class="mb-0">Summary & Payment</h5></div>
+                 <div class="section-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="col-md-8">{{ form.amount_paid|as_crispy_field }}</div>
+                                <div class="col-md-4 pt-4">
+                                    <div class="form-check">
+                                        {{ form.paid_in_full }}
+                                        <label for="{{ form.paid_in_full.id_for_label }}" class="form-check-label">Mark as Fully Paid</label>
                                     </div>
-                                </td>
-                                <td>{{ formset.empty_form.description }}</td>
-                                <td><span class="unit-display text-muted small d-block text-center pt-2"></span></td>
-                                <td><span class="available-qty-display text-muted small d-block text-center pt-2"></span></td>
-                                <td>{{ formset.empty_form.quantity }}</td>
-                                <td>{{ formset.empty_form.unit_price }}</td>
-                                <td class="line-total-display text-end pt-2">0.00</td>
-                                <td class="text-center pt-1">
-                                    <button type="button" class="btn btn-danger btn-sm btn-remove remove-row-btn" title="Remove Row">×</button>
-                                </td>
-                                {{ formset.empty_form.id }}
-                                {% if formset.empty_form.DELETE %}<input type="hidden" name="{{ formset.empty_form.DELETE.html_name }}" id="{{ formset.empty_form.DELETE.id_for_label }}">{% endif %}
-                            </tr>
-                        </template>
-                    </div>
-
-                    <!-- Manual Total Amount -->
-                    <div id="manual-total-section" {% if form.use_line_items.value %}style="display:none"{% endif %}>
-                        <div class="row">
-                            <div class="col-md-6">{{ form.manual_total_amount|as_crispy_field }}</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Summary/Payment Section -->
-                    <div id="summary-section" class="row mt-4 pt-3 border-top">
-                        <div class="col-md-4 offset-md-4 text-end" id="total-amount-wrapper">
-                            <label class="form-label">Total Amount</label>
-                            <input type="text" id="transaction-total" class="form-control text-end fs-5" readonly value="0.00" style="font-weight: bold; background: #f8f9fa;">
-                        </div>
-                        <div class="col-md-4">
-                            {{ form.amount_paid|as_crispy_field }}
-                            <div class="form-check mt-2">
-                                {{ form.paid_in_full }}
-                                <label for="{{ form.paid_in_full.id_for_label }}" class="form-check-label">Mark as Fully Paid</label>
+                        <div class="col-md-6">
+                            <div class="summary-box">
+                                <div class="summary-item">
+                                    <span>Total Amount</span>
+                                    <span id="summary-total">{{ currency_symbol }}0.00</span>
+                                </div>
+                                <div class="summary-item grand-total">
+                                    <span>Balance Due</span>
+                                    <span id="summary-balance">{{ currency_symbol }}0.00</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+
             <!-- Action Buttons -->
             <div class="form-actions">
                 <button type="button" class="btn btn-cancel" onclick="goBack()">Cancel</button>
-                <button class="btn btn-save" type="submit">Save Transaction</button>
+                <button class="btn btn-save" type="submit">
+                    {% if transaction %}Update Transaction{% else %}Save Transaction{% endif %}
+                </button>
             </div>
         </form>
+
+        <!-- Templates for new formset rows -->
+        <div class="d-none">
+            <template id="empty-form-template">
+                <tr class="line-item-row formset-row" id="form-__prefix__">
+                    <td><div class="position-relative">{{ formset.empty_form.item_search }}{{ formset.empty_form.item }}</div></td>
+                    <td>{{ formset.empty_form.description }}</td>
+                    <td><span class="unit-display text-muted small d-block text-center pt-2"></span></td>
+                    <td><span class="available-qty-display text-muted small d-block text-center pt-2"></span></td>
+                    <td>{{ formset.empty_form.quantity }}</td>
+                    <td>{{ formset.empty_form.unit_price }}</td>
+                    <td class="line-total-display text-end pt-2">0.00</td>
+                    <td class="text-center pt-1"><button type="button" class="btn btn-danger btn-sm btn-remove remove-row-btn" title="Remove Row">×</button></td>
+                    {{ formset.empty_form.id }}
+                </tr>
+            </template>
+            <template id="empty-expense-form-template">
+                <tr class="expense-line-row formset-row">
+                    <td>{{ expense_formset.empty_form.account }}</td>
+                    <td>{{ expense_formset.empty_form.amount }}</td>
+                    <td>{{ expense_formset.empty_form.description }}</td>
+                    <td class="text-center pt-1"><button type="button" class="btn btn-danger btn-sm btn-remove remove-expense-row-btn" title="Remove Row">×</button></td>
+                    {{ expense_formset.empty_form.id }}
+                </tr>
+            </template>
+        </div>
     </div>
 </div>
 {% endblock content %}
@@ -180,7 +240,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     const currencySymbol = '{{ currency_symbol|escapejs }}';
 
-    // Initialize customer search
+    // --- FORM ELEMENTS ---
+    const useLineItemsCheckbox = document.getElementById('id_use_line_items');
+    const lineItemsSection = document.getElementById('line-items-section');
+    const expenseLinesSection = document.getElementById('expense-lines-section');
+    const categoryWrapper = document.getElementById('category-wrapper');
+    const paidInFullCheckbox = document.getElementById('id_paid_in_full');
+    const amountPaidInput = document.getElementById('id_amount_paid');
+    const transactionForm = document.getElementById('transaction-form');
+
+    // --- INITIALIZE CUSTOMER SMART SEARCH ---
     const customerSearchInput = document.getElementById('id_customer_search');
     if (customerSearchInput) {
         new window.SmartSearch(customerSearchInput, '{% url "customers:api_search" %}', {
@@ -188,30 +257,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Formset elements
-    const formsetContainer = document.querySelector('.formset-container');
-    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    // --- INVENTORY ITEM FORMSET MANAGEMENT ---
+    const itemFormsetContainer = document.querySelector('.formset-container');
+    const itemTotalFormsInput = document.querySelector('input[name="items-TOTAL_FORMS"]');
     const addRowButton = document.getElementById('add-row-btn');
 
-    // Initialize SmartSearch for item search inputs
     function initializeItemSearch(target) {
         if (!target || target.dataset.smartSearchInitialized) return;
         target.dataset.smartSearchInitialized = 'true';
-
+        
+        // Initialize the SmartSearch component
         new window.SmartSearch(target, '{% url "inventory:api_items_search" %}', {
-            placeholder: 'Search products...', allowCreate: false, currencySymbol: currencySymbol
+            placeholder: 'Search products...',
+            allowCreate: false,
+            currencySymbol: currencySymbol,
+            
+            // 💡 FIX: This tells the script to attach the dropdown to the main form container.
+            // This prevents the dropdown from being clipped by the scrollable table wrapper.
+            dropdownParent: document.querySelector('.form-container')
         });
 
+        // Add event listener for when an item is selected
         target.addEventListener('smartselect', e => {
             const row = e.target.closest('.line-item-row');
             populateRowData(row, e.detail.item);
-        });
-    }
-
-    // Initialize existing item search inputs
-    if (formsetContainer) {
-        formsetContainer.querySelectorAll('.item-search-input').forEach(input => {
-            initializeItemSearch(input);
         });
     }
 
@@ -222,7 +291,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (descInput) descInput.value = data.description || '';
         row.querySelector('.unit-display').textContent = data.unit_of_measurement || 'N/A';
         
-        // Store available quantity as a data attribute for validation
         const availableQtyDisplay = row.querySelector('.available-qty-display');
         availableQtyDisplay.textContent = data.quantity_on_hand || '0';
         availableQtyDisplay.dataset.availableQty = data.quantity_on_hand || '0';
@@ -233,185 +301,78 @@ document.addEventListener('DOMContentLoaded', function() {
             unitPriceInput.value = (transactionType === 'SALE' ? data.sale_price : data.purchase_price) || '0.00';
         }
         
-        // Set up quantity validation for this row
         setupQuantityValidation(row);
-        
         updateRowTotal(row);
-        updateGrandTotal();
     }
 
-    // NEW FUNCTION: Setup quantity validation
-    function setupQuantityValidation(row) {
-        const quantityInput = row.querySelector('input[name$="-quantity"]');
-        const availableQtyDisplay = row.querySelector('.available-qty-display');
-        const transactionType = document.getElementById('id_transaction_type').value;
-        
-        if (quantityInput && availableQtyDisplay && transactionType === 'SALE') {
-            // Add input event listener for validation
-            quantityInput.addEventListener('input', () => {
-                validateQuantity(row);
-            });
-            
-            // Initial validation
-            validateQuantity(row);
-        }
-    }
-
-    // NEW FUNCTION: Validate quantity against available stock
-    function validateQuantity(row) {
-        const quantityInput = row.querySelector('input[name$="-quantity"]');
-        const availableQtyDisplay = row.querySelector('.available-qty-display');
-        const transactionType = document.getElementById('id_transaction_type').value;
-        
-        // Only validate for sales transactions
-        if (transactionType !== 'SALE') return true;
-        
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const availableQty = parseFloat(availableQtyDisplay.dataset.availableQty) || 0;
-        
-        // Clear previous error message
-        let errorMsg = row.querySelector('.quantity-error-msg');
-        if (errorMsg) {
-            errorMsg.remove();
-        }
-        
-        // Reset styling
-        quantityInput.classList.remove('is-invalid');
-        availableQtyDisplay.classList.remove('text-danger');
-        
-        // Check if quantity exceeds available stock
-        if (quantity > availableQty) {
-            // Add error styling
-            quantityInput.classList.add('is-invalid');
-            availableQtyDisplay.classList.add('text-danger');
-            
-            // Create and add error message
-            errorMsg = document.createElement('div');
-            errorMsg.className = 'invalid-feedback quantity-error-msg';
-            errorMsg.textContent = `Exceeds available stock (${availableQty})`;
-            quantityInput.parentNode.appendChild(errorMsg);
-            
-            return false;
-        }
-        
-        return true;
-    }
-
-    // NEW FUNCTION: Validate all quantities before form submission
-    function validateAllQuantities() {
-        const transactionType = document.getElementById('id_transaction_type').value;
-        if (transactionType !== 'SALE') return true;
-        
-        let isValid = true;
-        const rows = document.querySelectorAll('.line-item-row:not([style*="display: none"])');
-        
-        rows.forEach(row => {
-            if (!validateQuantity(row)) {
-                isValid = false;
-            }
-        });
-        
-        return isValid;
-    }
-
-    function addNewRow() {
-        if (!totalFormsInput || !formsetContainer) return;
-        const formIndex = parseInt(totalFormsInput.value);
-        
-        // Get the empty form HTML from the template
+    function addNewItemRow() {
+        if (!itemTotalFormsInput || !itemFormsetContainer) return;
+        const formIndex = parseInt(itemTotalFormsInput.value);
         const emptyFormTemplate = document.getElementById('empty-form-template');
         const newRowHtml = emptyFormTemplate.innerHTML.replace(/__prefix__/g, formIndex);
+        itemFormsetContainer.insertAdjacentHTML('beforeend', newRowHtml);
+        itemTotalFormsInput.value = formIndex + 1;
         
-        // Insert the new row
-        formsetContainer.insertAdjacentHTML('beforeend', newRowHtml);
-        
-        // Update the total forms count
-        totalFormsInput.value = formIndex + 1;
-        
-        // Initialize the new search input
-        const newRow = formsetContainer.lastElementChild;
-        const newSearchInput = newRow.querySelector('.item-search-input');
-        initializeItemSearch(newSearchInput);
-        
-        // Set up event listeners for quantity and price changes
-        const quantityInput = newRow.querySelector('input[name$="-quantity"]');
-        const priceInput = newRow.querySelector('input[name$="-unit_price"]');
-        
-        if (quantityInput) {
-            quantityInput.addEventListener('input', () => {
-                validateQuantity(newRow);
-                updateRowTotal(newRow);
-                updateGrandTotal();
-            });
-        }
-        
-        if (priceInput) {
-            priceInput.addEventListener('input', () => {
-                updateRowTotal(newRow);
-                updateGrandTotal();
-            });
-        }
-        
-        // Set up delete button functionality
-        const deleteButton = newRow.querySelector('.remove-row-btn');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                removeRow(deleteButton);
-            });
-        }
-        
-        updateGrandTotal();
+        const newRow = itemFormsetContainer.lastElementChild;
+        initializeItemSearch(newRow.querySelector('.item-search-input'));
+        attachItemRowEventListeners(newRow);
     }
 
-    function removeRow(button) {
-        const row = button.closest('.formset-row');
+    function removeItemRow(button) {
+        const row = button.closest('.line-item-row');
         if (!row) return;
-
-        // Check if this is the first row (don't delete it)
-        const rowIndex = Array.from(formsetContainer.children).indexOf(row);
-        if (rowIndex === 0) {
-            // For the first row, just clear the values instead of removing
-            const itemInput = row.querySelector('input[name$="-item"]');
-            const descInput = row.querySelector('input[name$="-description"]');
-            const quantityInput = row.querySelector('input[name$="-quantity"]');
-            const unitPriceInput = row.querySelector('input[name$="-unit_price"]');
-            const searchInput = row.querySelector('.item-search-input');
-            
-            if (itemInput) itemInput.value = '';
-            if (descInput) descInput.value = '';
-            if (quantityInput) quantityInput.value = '1.00';
-            if (unitPriceInput) unitPriceInput.value = '0.00';
-            if (searchInput) searchInput.value = '';
-            
-            row.querySelector('.unit-display').textContent = 'N/A';
-            row.querySelector('.available-qty-display').textContent = '0';
-            row.querySelector('.line-total-display').textContent = '0.00';
-            
-            // Remove any error messages
-            const errorMsg = row.querySelector('.quantity-error-msg');
-            if (errorMsg) errorMsg.remove();
-            
-            // Remove error styling
-            if (quantityInput) quantityInput.classList.remove('is-invalid');
-            row.querySelector('.available-qty-display').classList.remove('text-danger');
-            
-            updateGrandTotal();
-            return;
-        }
-
         const deleteInput = row.querySelector('input[name$="-DELETE"]');
         if (deleteInput) {
-            // This is an existing form, mark it for deletion
             deleteInput.value = 'on';
             row.style.display = 'none';
         } else {
-            // This is a new, unsaved form, just remove it from the DOM
             row.remove();
         }
         updateGrandTotal();
     }
 
+    function attachItemRowEventListeners(row) {
+        row.querySelector('.remove-row-btn').addEventListener('click', (e) => removeItemRow(e.target));
+        row.querySelectorAll('input[name$="-quantity"], input[name$="-unit_price"]').forEach(input => {
+            input.addEventListener('input', () => updateRowTotal(row));
+        });
+        setupQuantityValidation(row);
+    }
+
+    // --- EXPENSE SPLIT FORMSET MANAGEMENT ---
+    const expenseFormsetContainer = document.querySelector('.expense-formset-container');
+    const expenseTotalFormsInput = document.querySelector('input[name="expense_lines-TOTAL_FORMS"]');
+    const addExpenseRowButton = document.getElementById('add-expense-row-btn');
+
+    function addNewExpenseRow() {
+        if (!expenseTotalFormsInput || !expenseFormsetContainer) return;
+        const formIndex = parseInt(expenseTotalFormsInput.value);
+        const emptyFormTemplate = document.getElementById('empty-expense-form-template');
+        const newRowHtml = emptyFormTemplate.innerHTML.replace(/__prefix__/g, formIndex);
+        expenseFormsetContainer.insertAdjacentHTML('beforeend', newRowHtml);
+        expenseTotalFormsInput.value = formIndex + 1;
+        attachExpenseRowEventListeners(expenseFormsetContainer.lastElementChild);
+    }
+
+    function removeExpenseRow(button) {
+        const row = button.closest('.expense-line-row');
+        if (!row) return;
+        const deleteInput = row.querySelector('input[name$="-DELETE"]');
+        if (deleteInput) {
+            deleteInput.value = 'on';
+            row.style.display = 'none';
+        } else {
+            row.remove();
+        }
+        updateGrandTotal();
+    }
+
+    function attachExpenseRowEventListeners(row) {
+        row.querySelector('.remove-expense-row-btn').addEventListener('click', (e) => removeExpenseRow(e.target));
+        row.querySelector('input[name$="-amount"]').addEventListener('input', updateGrandTotal);
+    }
+
+    // --- CALCULATION & VALIDATION LOGIC ---
     function updateRowTotal(row) {
         const quantity = parseFloat(row.querySelector('input[name$="-quantity"]')?.value) || 0;
         const unitPrice = parseFloat(row.querySelector('input[name$="-unit_price"]')?.value) || 0;
@@ -419,155 +380,127 @@ document.addEventListener('DOMContentLoaded', function() {
         if (totalDisplay) {
             totalDisplay.textContent = (quantity * unitPrice).toFixed(2);
         }
+        updateGrandTotal();
     }
 
     function updateGrandTotal() {
         let grandTotal = 0;
-        document.querySelectorAll('.line-item-row:not([style*="display: none"])').forEach(row => {
-            const totalDisplay = row.querySelector('.line-total-display');
-            grandTotal += parseFloat(totalDisplay.textContent) || 0;
-        });
+        if (useLineItemsCheckbox.checked) {
+            document.querySelectorAll('.line-item-row:not([style*="display: none"])').forEach(row => {
+                grandTotal += parseFloat(row.querySelector('.line-total-display').textContent) || 0;
+            });
+        } else {
+            document.querySelectorAll('.expense-line-row:not([style*="display: none"])').forEach(row => {
+                grandTotal += parseFloat(row.querySelector('input[name$="-amount"]').value) || 0;
+            });
+        }
         
-        const transactionTotalInput = document.getElementById('transaction-total');
-        const calculatedTotalInput = document.getElementById('calculated_total');
-        if (transactionTotalInput) transactionTotalInput.value = grandTotal.toFixed(2);
-        if (calculatedTotalInput) calculatedTotalInput.value = grandTotal.toFixed(2);
-        
-        if (paidInFullCheckbox && paidInFullCheckbox.checked) {
-            handlePaidInFullChange();
+        document.getElementById('calculated_total').value = grandTotal.toFixed(2);
+        document.getElementById('summary-total').textContent = `${currencySymbol}${grandTotal.toFixed(2)}`;
+        updateBalanceDue();
+    }
+
+    function updateBalanceDue() {
+        const total = parseFloat(document.getElementById('calculated_total').value) || 0;
+        const paid = parseFloat(amountPaidInput.value) || 0;
+        const balance = total - paid;
+        document.getElementById('summary-balance').textContent = `${currencySymbol}${balance.toFixed(2)}`;
+    }
+
+    function setupQuantityValidation(row) {
+        const quantityInput = row.querySelector('input[name$="-quantity"]');
+        if (quantityInput) {
+            quantityInput.addEventListener('input', () => validateQuantity(row));
+            validateQuantity(row); // Initial check
         }
     }
 
-    // --- Event Listeners and Initial Setup ---
-    
-    // Add row button
-    if (addRowButton) {
-        addRowButton.addEventListener('click', addNewRow);
+    function validateQuantity(row) {
+        const transactionType = document.getElementById('id_transaction_type').value;
+        if (transactionType !== 'SALE') return true;
+        
+        const quantityInput = row.querySelector('input[name$="-quantity"]');
+        const availableQtyDisplay = row.querySelector('.available-qty-display');
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const availableQty = parseFloat(availableQtyDisplay.dataset.availableQty) || 0;
+        
+        const errorMsg = row.querySelector('.quantity-error-msg');
+        if (errorMsg) errorMsg.remove();
+        quantityInput.classList.remove('is-invalid');
+        
+        if (quantity > availableQty) {
+            quantityInput.classList.add('is-invalid');
+            const newErrorMsg = document.createElement('div');
+            newErrorMsg.className = 'invalid-feedback quantity-error-msg';
+            newErrorMsg.textContent = `Exceeds stock (${availableQty})`;
+            quantityInput.parentNode.appendChild(newErrorMsg);
+            return false;
+        }
+        return true;
     }
 
-    // Dynamic row events (remove, quantity/price change)
-    if (formsetContainer) {
-        // Set up event listeners for existing rows
-        formsetContainer.querySelectorAll('.formset-row').forEach(row => {
-            // Quantity change
-            const quantityInput = row.querySelector('input[name$="-quantity"]');
-            if (quantityInput) {
-                quantityInput.addEventListener('input', () => {
-                    validateQuantity(row);
-                    updateRowTotal(row);
-                    updateGrandTotal();
-                });
-            }
-            
-            // Price change
-            const priceInput = row.querySelector('input[name$="-unit_price"]');
-            if (priceInput) {
-                priceInput.addEventListener('input', () => {
-                    updateRowTotal(row);
-                    updateGrandTotal();
-                });
-            }
-            
-            // Remove button
-            const deleteButton = row.querySelector('.remove-row-btn');
-            if (deleteButton) {
-                deleteButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    removeRow(deleteButton);
-                });
-            }
-            
-            // Setup quantity validation for existing rows
-            setupQuantityValidation(row);
+    function validateAllQuantities() {
+        if (document.getElementById('id_transaction_type').value !== 'SALE') return true;
+        let isValid = true;
+        document.querySelectorAll('.line-item-row:not([style*="display: none"])').forEach(row => {
+            if (!validateQuantity(row)) isValid = false;
         });
+        return isValid;
     }
 
-    // Other form elements
-    const useLineItemsCheckbox = document.getElementById('id_use_line_items');
-    const lineItemsSection = document.getElementById('line-items-section');
-    const manualTotalSection = document.getElementById('manual-total-section');
-    const paidInFullCheckbox = document.getElementById('id_paid_in_full');
-    const amountPaidInput = document.getElementById('id_amount_paid');
-    const manualTotalInput = document.getElementById('id_manual_total_amount');
-    
-    function toggleLineItems() { 
-        const useLineItems = useLineItemsCheckbox.checked; 
-        if (lineItemsSection) lineItemsSection.style.display = useLineItems ? 'block' : 'none'; 
-        if (manualTotalSection) manualTotalSection.style.display = useLineItems ? 'none' : 'block'; 
-        if (useLineItems) { 
-            if (manualTotalInput) manualTotalInput.disabled = true; 
-            document.getElementById('transaction-total').readOnly = true; 
-            document.getElementById('transaction-total').style.background = '#f8f9fa'; 
-            updateGrandTotal(); 
-        } else { 
-            if (manualTotalInput) manualTotalInput.disabled = false; 
-            document.getElementById('transaction-total').readOnly = false; 
-            document.getElementById('transaction-total').style.background = ''; 
-            const manualValue = parseFloat(manualTotalInput?.value) || 0; 
-            document.getElementById('transaction-total').value = manualValue.toFixed(2); 
-            document.getElementById('calculated_total').value = manualValue.toFixed(2); 
-        } 
-    }
-    
-    function handlePaidInFullChange() { 
-        if (!paidInFullCheckbox || !amountPaidInput) return; 
-        if (paidInFullCheckbox.checked) { 
-            const total = useLineItemsCheckbox.checked ? 
-                (document.getElementById('transaction-total')?.value || '0.00') : 
-                (manualTotalInput?.value || '0.00'); 
-            amountPaidInput.value = parseFloat(total).toFixed(2); 
-            amountPaidInput.readOnly = true; 
-        } else { 
-            amountPaidInput.readOnly = false; 
-        } 
-    }
-    
-    if (useLineItemsCheckbox) {
-        useLineItemsCheckbox.addEventListener('change', () => { 
-            toggleLineItems(); 
-            if (paidInFullCheckbox && paidInFullCheckbox.checked) handlePaidInFullChange(); 
-        });
-    }
-    
-    if (paidInFullCheckbox) {
-        paidInFullCheckbox.addEventListener('change', handlePaidInFullChange);
-    }
-    
-    if (manualTotalInput) {
-        manualTotalInput.addEventListener('input', () => { 
-            document.getElementById('calculated_total').value = manualTotalInput.value; 
-            if (!useLineItemsCheckbox.checked) document.getElementById('transaction-total').value = manualTotalInput.value; 
-            if (paidInFullCheckbox && paidInFullCheckbox.checked) handlePaidInFullChange(); 
-        });
-    }
-    
-    // MODIFY: Add form submission validation
-    const transactionForm = document.getElementById('transaction-form');
-    if (transactionForm) {
-        transactionForm.addEventListener('submit', (e) => {
-            // Check if this is a sale transaction with line items
-            const transactionType = document.getElementById('id_transaction_type').value;
-            const useLineItems = useLineItemsCheckbox.checked;
-            
-            if (transactionType === 'SALE' && useLineItems) {
-                // Validate all quantities
-                if (!validateAllQuantities()) {
-                    e.preventDefault();
-                    alert('Cannot proceed. Some items exceed available inventory quantity.');
-                    return false;
-                }
-            }
-            
-            // Continue with normal submission
-            if (amountPaidInput && amountPaidInput.readOnly) amountPaidInput.readOnly = false;
-        });
+    // --- UI TOGGLING & MAIN EVENT HANDLERS ---
+    function toggleSections() {
+        const useLineItems = useLineItemsCheckbox.checked;
+        lineItemsSection.style.display = useLineItems ? 'block' : 'none';
+        expenseLinesSection.style.display = useLineItems ? 'none' : 'block';
+        categoryWrapper.style.display = useLineItems ? 'block' : 'none';
+        updateGrandTotal();
     }
 
-    // Initial state setup
-    toggleLineItems();
-    document.querySelectorAll('.formset-row').forEach(row => updateRowTotal(row));
-    updateGrandTotal();
-    if (paidInFullCheckbox && paidInFullCheckbox.checked) handlePaidInFullChange();
+    function handlePaidInFullChange() {
+        if (paidInFullCheckbox.checked) {
+            const total = document.getElementById('calculated_total').value;
+            amountPaidInput.value = parseFloat(total).toFixed(2);
+            amountPaidInput.readOnly = true;
+        } else {
+            amountPaidInput.readOnly = false;
+        }
+        updateBalanceDue();
+    }
+
+    // --- ATTACH EVENT LISTENERS ---
+    useLineItemsCheckbox.addEventListener('change', toggleSections);
+    paidInFullCheckbox.addEventListener('change', handlePaidInFullChange);
+    amountPaidInput.addEventListener('input', updateBalanceDue);
+    
+    // Item formset listeners
+    if (addRowButton) addRowButton.addEventListener('click', addNewItemRow);
+    document.querySelectorAll('.line-item-row').forEach(row => {
+        initializeItemSearch(row.querySelector('.item-search-input'));
+        attachItemRowEventListeners(row);
+    });
+
+    // Expense formset listeners
+    if (addExpenseRowButton) addExpenseRowButton.addEventListener('click', addNewExpenseRow);
+    document.querySelectorAll('.expense-line-row').forEach(attachExpenseRowEventListeners);
+
+    // Form submission validation
+    transactionForm.addEventListener('submit', (e) => {
+        if (useLineItemsCheckbox.checked && !validateAllQuantities()) {
+            e.preventDefault();
+            alert('Cannot proceed. Some item quantities exceed available stock.');
+            return;
+        }
+        if (amountPaidInput.readOnly) amountPaidInput.readOnly = false;
+    });
+
+    // --- INITIAL STATE SETUP ---
+    toggleSections();
+    document.querySelectorAll('.line-item-row').forEach(updateRowTotal);
+    if (!useLineItemsCheckbox.checked) {
+        updateGrandTotal();
+    }
+    if (paidInFullCheckbox.checked) handlePaidInFullChange();
 });
 
 function goBack() {
