@@ -50,38 +50,35 @@
                     </div>
                     <div class="col-md-3">
                         <label for="item_type" class="form-label">Item Type</label>
-                        <div class="dropdown" data-filter="true">
-                            <select class="form-select" id="item_type" name="item_type">
-                                <option value="">All Types</option>
-                                {% for value, label in item_type_choices %}
-                                    <option value="{{ value }}" {% if selected_item_type == value %}selected{% endif %}>
-                                        {{ label }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        <select class="form-select" id="item_type" name="item_type">
+                            <option value="">All Types</option>
+                            {% for value, label in item_type_choices %}
+                                <option value="{{ value }}" {% if selected_item_type == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <label for="stock_status" class="form-label">Stock Status</label>
-                        <div class="dropdown" data-filter="true">
-                            <select class="form-select" id="stock_status" name="stock_status">
-                                <option value="">All Stock</option>
-                                <option value="in_stock" {% if selected_stock_status == 'in_stock' %}selected{% endif %}>In Stock</option>
-                                <option value="low_stock" {% if selected_stock_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
-                                <option value="out_of_stock" {% if selected_stock_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
-                                <option value="batch_tracked" {% if selected_stock_status == 'batch_tracked' %}selected{% endif %}>Batch Tracked</option>
-                                <option value="expiry_tracked" {% if selected_stock_status == 'expiry_tracked' %}selected{% endif %}>Expiry Tracked</option>
-                            </select>
-                        </div>
+                        <select class="form-select" id="stock_status" name="stock_status">
+                            <option value="">All Stock</option>
+                            <option value="in_stock" {% if selected_stock_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                            <option value="low_stock" {% if selected_stock_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                            <option value="out_of_stock" {% if selected_stock_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                            <option value="batch_tracked" {% if selected_stock_status == 'batch_tracked' %}selected{% endif %}>Batch Tracked</option>
+                            <option value="expiry_tracked" {% if selected_stock_status == 'expiry_tracked' %}selected{% endif %}>Expiry Tracked</option>
+                        </select>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <div class="w-100">
-                            <button type="submit" class="btn btn-search w-100 mb-2">
+                            <button type="submit" class="btn btn-search w-100">
                                 Filter
                             </button>
                         </div>
                     </div>
                 </div>
+
                 <!-- Second row for clear button -->
                 <div class="row mt-2">
                     <div class="col-md-12 text-end">
@@ -313,18 +310,7 @@
 </div>
 
 <!-- Load JavaScript Files -->
-<script src="{% static 'assets/js/bootstrap-dropdown-filter.js' %}"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize dropdown filters
-    $('.dropdown[data-filter="true"]').dropdownFilter({
-        filterPlaceholder: 'Search options...',
-        noResultsText: 'No results found',
-        maxHeight: '200px'
-    });
-});
-
 // Utility function for going back
 function goBack() {
     if (document.referrer && document.referrer !== window.location.href) {

@@ -40,7 +40,7 @@
                     </div>
                     <div class="col-md-3">
                         <label for="item" class="form-label">Item</label>
-                        <select class="form-select" id="item" name="item" data-filter="true" data-placeholder="Search items...">
+                        <select class="form-select" id="item" name="item">
                             <option value="">All Items</option>
                             {% for item in items %}
                                 <option value="{{ item.id }}" {% if item_filter == item.id|stringformat:"s" %}selected{% endif %}>
