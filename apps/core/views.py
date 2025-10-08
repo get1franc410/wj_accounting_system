@@ -13,6 +13,7 @@ from apps.customers.models import Customer
 from apps.inventory.models import InventoryItem
 from apps.transactions.models import TransactionCategory
 from apps.transactions.forms import TransactionCategoryForm
+from django.core.mail import send_mail
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -28,18 +29,39 @@ from apps.subscriptions.models import Subscription, ExchangeRate
 
 def public_home_view(request):
     """
-    Renders the public landing page for unauthenticated users.
-    If a user is already authenticated, it redirects them to their dashboard.
+    Renders the public landing page and handles the contact form submission.
     """
     if request.user.is_authenticated:
-        return redirect('dashboard:home') 
-    
-    # Fetch the current valid exchange rate
-    current_rate = ExchangeRate.objects.filter(valid_until__gte=timezone.now()).order_by('-valid_from').first()
+        return redirect('dashboard:home')
 
-    # Prepare plan details for the template
+    # --- NEW: Handle Contact Form POST Request ---
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        from_email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        # Construct the email
+        full_message = f"Message from: {name} ({from_email})\n\n{message}"
+        
+        try:
+            # Send the email
+            send_mail(
+                f"Contact Form: {subject}",
+                full_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [settings.CONTACT_FORM_RECIPIENT], 
+                fail_silently=False,
+            )
+            messages.success(request, 'Your message has been sent successfully. Thank you!')
+        except Exception as e:
+            messages.error(request, 'Sorry, there was an error sending your message. Please try again later.')
+            print(f"Email sending failed: {e}")
+
+        return redirect('/#contact')
+
+    current_rate = ExchangeRate.objects.filter(valid_until__gte=timezone.now()).order_by('-valid_from').first()
     plans = []
-    # Exclude TRIAL from public display
     plan_choices = [plan for plan in Subscription.Plan.choices if plan[0] != 'TRIAL']
     
     for plan_code, plan_name_full in plan_choices:
@@ -48,7 +70,7 @@ def public_home_view(request):
         
         plan_data = {
             'code': plan_code,
-            'name': plan_code.title(), # e.g., 'BASIC' -> 'Basic'
+            'name': plan_code.title(),
             'price_usd': price_usd,
             'price_ngn': (price_usd * current_rate.rate) if current_rate else None,
             'features': details.get('features', [])

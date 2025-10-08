@@ -77,4 +77,4 @@ def logout_view(request):
     """
     logout(request)
     messages.success(request, "You have been successfully logged out.")
-    return redirect('auth:login')
+    return redirect('core:public_home')

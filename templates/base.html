@@ -400,6 +400,33 @@
     }
   }
 </style>
+
+<!-- 🎯 FIX: MOBILE & LAYOUT CORRECTIONS -->
+<style>
+  #header {
+    position: fixed; /* 1. Make header sticky */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 997; /* Ensure it's above other content */
+    transition: all 0.5s;
+  }
+
+  /* #main {
+    margin-top: 70px; /* 2. Push main content down to avoid overlap with fixed header */
+  
+
+  /* 3. Ensure mobile nav toggle is always visible and clickable */
+  .mobile-nav-toggle {
+    z-index: 999;
+  }
+
+  /* 4. Make charts/canvases responsive */
+  canvas {
+    max-width: 100%;
+    height: auto !important;
+  }
+</style>
 </head>
 
 <body>
@@ -657,6 +684,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, true);
 });
+</script>
+
+<!-- 🎯 FIX: SCRIPT TO DYNAMICALLY SET MAIN CONTENT MARGIN -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.querySelector('#header');
+    const mainContent = document.querySelector('#main');
+    
+    if (header && mainContent) {
+      // This function measures the header and sets the top margin for the main content
+      const adjustMainMargin = () => {
+        const headerHeight = header.offsetHeight;
+        mainContent.style.marginTop = headerHeight + 'px';
+      };
+      
+      // Adjust margin on initial page load
+      adjustMainMargin();
+      
+      // Optional but recommended: Adjust if the window is resized
+      window.addEventListener('resize', adjustMainMargin);
+    }
+  });
 </script>
   
   {% block scripts %}{% endblock %}

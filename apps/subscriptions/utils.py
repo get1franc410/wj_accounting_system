@@ -14,7 +14,7 @@ def has_production_access(user):
     if not company:
         return False
     
-    subscription = company.active_subscription
+    subscription = company.subscription
     if not subscription:
         return False
     

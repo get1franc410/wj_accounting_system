@@ -21,12 +21,12 @@
             <!-- Free Trial Promo Section -->
             <div class="row justify-content-center mb-5">
                 <div class="col-lg-10 text-center">
-                    <div class="free-trial-promo p-4" style="background-color: #f1f7ff;">
-                        <h3 style="font-weight: 600;">Not Ready to Commit?</h3>
-                        <p class="lead">
+                    <div class="free-trial-promo p-4">
+                        <h3 class="promo-title">Not Ready to Commit?</h3>
+                        <p class="lead promo-text">
                             Explore all our features with a full-access, 30-day free trial. No credit card required.
                         </p>
-                        <a href="{% url 'subscriptions:register_form' 'TRIAL' %}" class="btn btn-success btn-lg">Start Your Free Trial</a>
+                        <a href="{% url 'subscriptions:register_form' 'TRIAL' %}" class="btn btn-primary btn-lg">Start Your Free Trial</a>
                     </div>
                 </div>
             </div>
@@ -39,8 +39,9 @@
                 {% for plan in plans %}
                     {% if plan.code != 'TRIAL' %}
                     <div class="col-lg-3 col-md-6">
-                        <div class="card h-100 shadow-sm plan-card">
-                            <div class="card-header text-center {% if plan.code == 'STANDARD' %}bg-dark text-white{% endif %}">
+                        <!-- The plan-specific class is no longer used for background color but is kept for potential future use -->
+                        <div class="card h-100 shadow-sm plan-card plan-{{ plan.code|lower }}">
+                            <div class="card-header text-center">
                                 <h4 class="my-0 fw-normal">{{ plan.name }}</h4>
                             </div>
                             <div class="card-body d-flex flex-column">
@@ -60,12 +61,11 @@
                                     <li><i class="bi bi-check text-success"></i> {{ feature }}</li>
                                     {% endfor %}
                                     
-                                    <!-- Add Production Module Feature for Deluxe and Premium Plans -->
                                     {% if plan.code == 'DELUXE' or plan.code == 'PREMIUM' %}
                                     <li><i class="bi bi-check text-success"></i> <strong>Production Management</strong></li>
                                     {% endif %}
                                 </ul>
-                                <a href="{% url 'subscriptions:register_form' plan_code=plan.code %}" class="btn btn-dark w-100">Select Plan & Register</a>
+                                <a href="{% url 'subscriptions:register_form' plan_code=plan.code %}" class="btn select-plan-btn w-100">Select Plan & Register</a>
                             </div>
                         </div>
                     </div>
@@ -78,24 +78,25 @@
             <!-- Payment Information Section -->
             <div id="payment-info">
                 <h4 class="text-center mb-3"><i class="bi bi-wallet2 me-2"></i>Payment Instructions for Paid Plans</h4>
-                <div class="alert alert-danger text-center">
-                    <i class="bi bi-exclamation-circle-fill"></i> <strong>Important:</strong> Please make your payment *before* proceeding to the registration form. You will be required to upload the receipt to complete your registration.
+                <div class="alert alert-danger text-center payment-instruction">
+                    <div class="fw-bold fs-5"><i class="bi bi-exclamation-circle-fill"></i> IMPORTANT</div>
+                    <div>Please make your payment *before* proceeding to the registration form. You will be required to upload the receipt to complete your registration.</div>
                 </div>
                 
                 <div class="row justify-content-center mt-4">
                     <div class="col-md-5 mb-3">
-                        <div class="alert alert-secondary h-100">
-                            <h6 class="alert-heading">Naira (NGN) Account</h6>
-                            <strong>Bank Name:</strong> Wema Bank<br>
-                            <strong>Account Number:</strong> 0123456789<br>
+                        <div class="alert alert-light border h-100">
+                            <h6 class="alert-heading account-title">Naira (NGN) Account</h6>
+                            <strong>Bank Name:</strong> GTBank<br>
+                            <strong>Account Number:</strong> 012****789<br>
                             <strong>Account Name:</strong> WJ Accounting Solutions
                         </div>
                     </div>
                     <div class="col-md-5 mb-3">
-                        <div class="alert alert-secondary h-100">
-                            <h6 class="alert-heading">US Dollar (USD) Account</h6>
-                            <strong>Bank Name:</strong> GTBank (Domiciliary)<br>
-                            <strong>Account Number:</strong> 9876543210<br>
+                        <div class="alert alert-light border h-100">
+                            <h6 class="alert-heading account-title">US Dollar (USD) Account</h6>
+                            <strong>Bank Name:</strong> Barclays Bank<br>
+                            <strong>Account Number:</strong> 98****210<br>
                             <strong>Account Name:</strong> WJ Accounting Solutions
                         </div>
                     </div>
@@ -113,11 +114,51 @@
     </div>
 </div>
 
+<!-- 🎯 MODIFIED: Updated styles for a unified plan card design -->
 <style>
-.plan-card { transition: transform .2s ease-in-out, box-shadow .2s ease-in-out; }
-.plan-card:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
 .page-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e9ecef; }
 .page-header h2 { font-weight: 600; margin: 0; }
-.free-trial-promo { border-radius: 0 !important; } /* Match sharp edges theme */
+
+/* Free Trial Promo Section */
+.free-trial-promo {
+    background-color: #e0f7fa; /* Light chewing-gum blue/cyan */
+    border: 1px solid #b2ebf2;
+    border-radius: 0 !important;
+}
+.promo-title { color: #00796b; font-weight: 700; }
+.promo-text { color: #004d40; }
+
+/* Plan Card Base Styles */
+.plan-card {
+    transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+    border: none;
+    background-color: #fff8e1; /* Light cream color for all cards */
+}
+.plan-card:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+.plan-card .card-header { border-bottom: none; padding: 1.25rem 1rem; }
+.plan-card .card-header h4 { font-weight: 600; font-size: 1.2rem; }
+.plan-card .list-unstyled li { padding-bottom: 0.5rem; }
+
+/* Unified Golden Theme for Paid Plans */
+.plan-card .card-header {
+    background-color: #947647; /* Darker, richer gold */
+    color: #d3d9de; /* Darker text for better contrast */
+}
+
+.select-plan-btn {
+    background-color: #f8f9fa; /* Light/faint grey */
+    color: #2b2c2e; /* Dark text for readability */
+    font-weight: 500;
+    border: 1px solid #dee2e6; /* Subtle border */
+    transition: background-color .15s ease-in-out, color .15s ease-in-out;
+}
+.select-plan-btn:hover {
+    background-color: #e9ecef; /* Slightly darker grey on hover */
+    color: #212529;
+}
+
+/* Payment Instruction Section */
+.payment-instruction { background-color: #f8d7da; color: #842029; border-color: #f5c2c7; }
+.account-title { font-weight: 600; color: #005662; }
 </style>
 {% endblock %}

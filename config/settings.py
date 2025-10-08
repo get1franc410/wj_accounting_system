@@ -194,6 +194,7 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 # Email settings for different purposes
 COMPANY_EMAIL = os.getenv('COMPANY_EMAIL', DEFAULT_FROM_EMAIL)
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', DEFAULT_FROM_EMAIL)
+CONTACT_FORM_RECIPIENT = os.getenv('CONTACT_FORM_RECIPIENT', 'support@wjaccounting.com') 
 
 # Email templates configuration
 EMAIL_TEMPLATES = {
