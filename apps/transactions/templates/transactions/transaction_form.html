@@ -72,21 +72,22 @@
                             <table class="table table-minimal" id="line-items-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:25%">Item/Product</th>
-                                        <th style="width:25%">Description</th>
-                                        <th style="width:8%; text-align:center;">Unit</th>
-                                        <th style="width:10%; text-align:center;">Available</th>
-                                        <th style="width:10%">Quantity</th>
-                                        <th style="width:12%">Unit Price</th>
+                                        <th style="width:35%">Item/Product</th>
+                                        <th style="width:20%">Description</th>
+                                        <th style="width:6%; text-align:center;">Unit</th>
+                                        <th style="width:8%; text-align:center;">Available</th>
+                                        <th style="width:8%">Quantity</th>
+                                        <th style="width:11%">Unit Price</th>
                                         <th style="width:10%; text-align:right;">Total</th>
-                                        <th style="width:5%"></th>
+                                        <th style="width:2%"></th>
                                     </tr>
                                 </thead>
                                 <tbody class="formset-container">
                                     {% for item_form in formset.forms %}
                                         <tr class="line-item-row formset-row" id="form-{{ forloop.counter0 }}">
                                             <td>
-                                                <div class="position-relative">
+                                                <div class="input-group">
+                                                    {{ item_form.item_type_filter }}
                                                     {{ item_form.item_search }}
                                                     {{ item_form.item }}
                                                 </div>
@@ -210,7 +211,13 @@
         <div class="d-none">
             <template id="empty-form-template">
                 <tr class="line-item-row formset-row" id="form-__prefix__">
-                    <td><div class="position-relative">{{ formset.empty_form.item_search }}{{ formset.empty_form.item }}</div></td>
+                    <td>
+                        <div class="input-group">
+                            {{ formset.empty_form.item_type_filter }}
+                            {{ formset.empty_form.item_search }}
+                            {{ formset.empty_form.item }}
+                        </div>
+                    </td>
                     <td>{{ formset.empty_form.description }}</td>
                     <td><span class="unit-display text-muted small d-block text-center pt-2"></span></td>
                     <td><span class="available-qty-display text-muted small d-block text-center pt-2"></span></td>
@@ -236,6 +243,17 @@
 {% endblock content %}
 
 {% block scripts %}
+<!-- ========================================================================================= -->
+<!-- =============================  START: DEFINITIVE FIXES  ================================ -->
+<!-- ========================================================================================= -->
+
+<!-- FIX #1: Force dropdown to appear on top with a high z-index -->
+<style>
+    .smart-search-dropdown {
+        z-index: 9999 !important;
+    }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const currencySymbol = '{{ currency_symbol|escapejs }}';
@@ -262,26 +280,71 @@ document.addEventListener('DOMContentLoaded', function() {
     const itemTotalFormsInput = document.querySelector('input[name="items-TOTAL_FORMS"]');
     const addRowButton = document.getElementById('add-row-btn');
 
+    /**
+     * FIX #2: Robust item search initialization and filter handling.
+     * This new function explicitly updates the search URL and re-triggers the search
+     * when the item type filter is changed.
+     */
     function initializeItemSearch(target) {
         if (!target || target.dataset.smartSearchInitialized) return;
         target.dataset.smartSearchInitialized = 'true';
-        
-        // Initialize the SmartSearch component
-        new window.SmartSearch(target, '{% url "inventory:api_items_search" %}', {
-            placeholder: 'Search products...',
+
+        const baseSearchUrl = '{% url "inventory:api_items_search" %}';
+        const row = target.closest('.line-item-row');
+        const filter = row.querySelector('.line-item-type-filter');
+
+        const initialItemType = filter ? filter.value : '';
+        const initialSearchUrl = initialItemType ? `${baseSearchUrl}?item_type=${initialItemType}` : baseSearchUrl;
+
+        const smartSearch = new window.SmartSearch(target, initialSearchUrl, {
+            placeholder: 'Search products & services...',
             allowCreate: false,
             currencySymbol: currencySymbol,
-            
-            // 💡 FIX: This tells the script to attach the dropdown to the main form container.
-            // This prevents the dropdown from being clipped by the scrollable table wrapper.
-            dropdownParent: document.querySelector('.form-container')
+            dropdownParent: document.body, // Ensures correct positioning
+            renderItem: function(item) {
+                const type_map = {
+                    'stock_item': 'Stock',
+                    'finished_good': 'Finished Good',
+                    'service': 'Service'
+                };
+                const itemType = type_map[item.item_type] || 'Item';
+                return `<div class="d-flex justify-content-between align-items-center"><span>${item.name}</span><span class="badge-minimal-info">${itemType}</span></div>`;
+            }
         });
 
-        // Add event listener for when an item is selected
+        target.smartSearchInstance = smartSearch;
+
         target.addEventListener('smartselect', e => {
-            const row = e.target.closest('.line-item-row');
             populateRowData(row, e.detail.item);
         });
+
+        if (filter) {
+            filter.addEventListener('change', () => {
+                // 1. Clear previous selection and all related fields
+                target.value = '';
+                row.querySelector('input[name$="-item"]').value = '';
+                row.querySelector('input[name$="-description"]').value = '';
+                row.querySelector('.unit-display').textContent = '';
+                row.querySelector('.available-qty-display').textContent = '';
+                row.querySelector('input[name$="-quantity"]').value = '';
+                row.querySelector('input[name$="-unit_price"]').value = '';
+                updateRowTotal(row); // Recalculates line and grand totals
+
+                // 2. Get the new filter value
+                const itemType = filter.value;
+                
+                // 3. Explicitly update the search URL on the SmartSearch instance
+                if (itemType) {
+                    target.smartSearchInstance.options.searchUrl = `${baseSearchUrl}?item_type=${itemType}`;
+                } else {
+                    target.smartSearchInstance.options.searchUrl = baseSearchUrl;
+                }
+
+                // 4. Manually trigger a search and focus the input to show the new filtered list
+                target.smartSearchInstance.search('');
+                target.focus();
+            });
+        }
     }
 
     function populateRowData(row, data) {

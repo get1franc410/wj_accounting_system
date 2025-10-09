@@ -286,13 +286,21 @@ ExpenseLineFormSet = inlineformset_factory(
 )
 
 class TransactionItemForm(forms.ModelForm):
-    # A visible text input for searching inventory items
+    # This is the search input field for the SmartSearch component
     item_search = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
-            'class': 'form-control item-search-input', 
-            'placeholder': 'Search products...' # Changed placeholder for consistency
-        }),
+            'class': 'form-control item-search-input',
+            'placeholder': 'Search products & services...'  # Updated placeholder
+        })
+    )
+
+    # NEW: Add a filter dropdown for each line
+    item_type_filter = forms.ChoiceField(
+        choices=[],  # Choices will be set dynamically in __init__
+        required=False,
+        label="",
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm line-item-type-filter'})
     )
 
     class Meta:
@@ -302,56 +310,56 @@ class TransactionItemForm(forms.ModelForm):
             'item': forms.HiddenInput(),
             'description': forms.TextInput(attrs={
                 'class': 'form-control line-description',
-                'placeholder': 'Overrides the default item description if needed.' # Added placeholder
+                'placeholder': 'Overrides the default item description if needed.'
             }),
             'quantity': forms.NumberInput(attrs={'class': 'form-control quantity', 'step': '0.01', 'placeholder': '1.00'}),
             'unit_price': forms.NumberInput(attrs={'class': 'form-control unit-price', 'step': '0.01', 'placeholder': 'Price per unit.'}),
         }
 
     def __init__(self, *args, **kwargs):
+        # This preserves your custom logic (e.g., filtering by company)
         company = kwargs.pop('company', None)
         super().__init__(*args, **kwargs)
 
         if company:
             self.fields['item'].queryset = InventoryItem.objects.filter(company=company)
         
-        # Make item field not required at form level
         self.fields['item'].required = False
         
-        # Set initial values for search field if editing
         if self.instance and self.instance.pk and self.instance.item:
             self.fields['item_search'].initial = self.instance.item.name
             self.fields['item'].initial = self.instance.item.id
+            self.fields['item_search'].widget.attrs['data-item-type'] = self.instance.item.item_type
 
-        # --- ✅ CORRECTED LOGIC ---
-        # Remove labels for ALL fields for a clean inline display in the table.
-        for field in self.fields.values():
-            field.label = False
+        raw_choices = [('', 'All Types')]
+        for group in InventoryItem.ITEM_TYPE_CHOICES:
+            if isinstance(group[1], tuple):  # It's a group like ('Products', (...))
+                raw_choices.extend(group[1])
+            else:  # It's a single item like ('service', 'Service')
+                raw_choices.append(group)
+        self.fields['item_type_filter'].choices = raw_choices
+
+        # This preserves your logic for hiding field labels
+        for field_name, field in self.fields.items():
+            if field_name != 'item_type_filter':
+                field.label = False
 
     def has_changed(self):
-        """
-        Override to check if form has any real data.
-        This prevents empty rows from being processed.
-        """
-        # Check if any meaningful data has been entered
+        # Your existing has_changed logic is preserved - THIS IS IMPORTANT
         if self.data:
             item = self.data.get(self.add_prefix('item'))
             quantity = self.data.get(self.add_prefix('quantity'))
             unit_price = self.data.get(self.add_prefix('unit_price'))
             
-            # If there's no item and no other data, consider it unchanged
             if not item and not quantity and not unit_price:
                 return False
         
         return super().has_changed()
 
     def clean(self):
-        """
-        Enhanced validation to prevent the NOT NULL constraint error
-        """
+        # Your existing validation logic is preserved - THIS IS CRITICAL
         cleaned_data = super().clean()
         
-        # If the form is marked for deletion, skip validation
         if cleaned_data.get('DELETE'):
             return cleaned_data
         
@@ -360,25 +368,21 @@ class TransactionItemForm(forms.ModelForm):
         unit_price = cleaned_data.get('unit_price')
         description = cleaned_data.get('description')
         
-        # Check if the row has any data at all
         has_any_data = any([item, quantity, unit_price, description])
         
         if has_any_data:
-            # If there's any data, item is required
             if not item:
-                # We raise the error on item_search as it's the visible field
                 self.add_error('item_search', "Please select an item or clear this row completely.")
             
-            # Validate quantity
             if not quantity or quantity <= 0:
                 self.add_error('quantity', 'Quantity must be > 0.')
             
-            # Validate unit price
             if unit_price is None or unit_price < 0:
                 self.add_error('unit_price', 'Price cannot be negative.')
         
         return cleaned_data
-    
+
+# This uses your merged form and preserves your original formset settings
 TransactionItemFormSet = inlineformset_factory(
     Transaction,
     TransactionItem,

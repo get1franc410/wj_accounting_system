@@ -52,10 +52,22 @@
                         <label for="item_type" class="form-label">Item Type</label>
                         <select class="form-select" id="item_type" name="item_type">
                             <option value="">All Types</option>
-                            {% for value, label in item_type_choices %}
-                                <option value="{{ value }}" {% if selected_item_type == value %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
+                            <!-- MODIFIED: Loop to handle nested choices with optgroup -->
+                            {% for group_name, group_choices in item_type_choices %}
+                                {% if group_name == 'Products' %}
+                                    <optgroup label="{{ group_name }}">
+                                        {% for value, label in group_choices %}
+                                            <option value="{{ value }}" {% if selected_item_type == value %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% else %}
+                                    {# This handles 'Service' which is not in a group #}
+                                    <option value="{{ group_name }}" {% if selected_item_type == group_name %}selected{% endif %}>
+                                        {{ group_choices }}
+                                    </option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                     </div>

@@ -8,10 +8,14 @@ from decimal import Decimal
 from django.utils import timezone
 
 class InventoryItem(models.Model):
-    PRODUCT = 'product'
+    STOCK_ITEM = 'stock_item'
+    FINISHED_GOOD = 'finished_good'
     SERVICE = 'service'
     ITEM_TYPE_CHOICES = [
-        (PRODUCT, 'Product'),
+        ('Products', (
+            (STOCK_ITEM, 'Stock Item'),      
+            (FINISHED_GOOD, 'Finished Good'), 
+        )),
         (SERVICE, 'Service'),
     ]
 
@@ -67,7 +71,7 @@ class InventoryItem(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='inventory_items')
     name = models.CharField(max_length=255, help_text="The name of the product or service.")
     sku = models.CharField(max_length=100, blank=True, help_text="Stock Keeping Unit - a unique code for this item.")
-    item_type = models.CharField(max_length=10, choices=ITEM_TYPE_CHOICES, default=PRODUCT)
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES, default=STOCK_ITEM)
     description = models.TextField(blank=True)
     
     # Enhanced unit field with expanded choices
@@ -244,23 +248,27 @@ class InventoryItem(models.Model):
             expiry_date__lte=warning_date,
             quantity_remaining__gt=0
         ).order_by('expiry_date')
+    
+    @property
+    def is_product(self):
+        """Check if the item is any kind of physical product."""
+        return self.item_type in [self.STOCK_ITEM, self.FINISHED_GOOD]
 
     def clean(self):
         """Enhanced validation"""
-        if self.item_type == self.PRODUCT and not self.sku:
-            raise ValidationError("Products must have a unique SKU.")
-        if self.item_type == self.PRODUCT and not self.expense_account:
+        if self.is_product and not self.sku:
+            raise ValidationError("Products (Stock Items and Finished Goods) must have a unique SKU.")
+        if self.is_product and not self.expense_account:
             raise ValidationError("Products must have an associated expense account (e.g., Cost of Goods Sold).")
-        if self.item_type == self.PRODUCT and not self.asset_account:
+        if self.is_product and not self.asset_account:
             raise ValidationError("Products must have an associated asset account (e.g., Inventory Asset).")
         
-        # Validate batch tracking with costing method
         if self.enable_batch_tracking and self.costing_method != self.CostingMethod.SPECIFIC_ID:
             raise ValidationError("Batch tracking requires 'Specific Identification' costing method.")
 
     @property
     def is_low_on_stock(self):
-        if self.item_type == self.PRODUCT and self.reorder_level > 0:
+        if self.is_product and self.reorder_level > 0:
             return self.quantity_on_hand <= self.reorder_level
         return False
 

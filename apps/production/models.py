@@ -19,7 +19,8 @@ class ProductionFormula(models.Model):
         InventoryItem, 
         on_delete=models.CASCADE, 
         related_name='production_formulas',
-        help_text="The finished product that will be created"
+        help_text="The finished product that will be created",
+        limit_choices_to={'item_type': InventoryItem.FINISHED_GOOD}
     )
     unit_quantity = models.DecimalField(
         max_digits=12, 
@@ -84,7 +85,8 @@ class FormulaIngredient(models.Model):
         InventoryItem, 
         on_delete=models.CASCADE, 
         related_name='used_in_formulas',
-        help_text="Raw material or component used in production"
+        help_text="Raw material or component used in production",
+        limit_choices_to={'item_type': InventoryItem.STOCK_ITEM}
     )
     quantity = models.DecimalField(
         max_digits=12, 

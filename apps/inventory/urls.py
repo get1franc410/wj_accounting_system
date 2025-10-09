@@ -24,8 +24,11 @@ urlpatterns = [
     path('items/<int:item_id>/batches/create/', views.batch_create, name='batch_create'),
 
     path('items/<int:item_id>/price-adjustment/', views.price_adjustment_create, name='price_adjustment_create'),
+
+    path('api/items/search/', api_views.inventory_search_api, name='inventory_search_api'),
     
     # AJAX endpoints
+    path('api/items/<int:item_id>/details/', api_views.inventory_item_detail_api, name='api_item_detail'),
     path('ajax/item/<int:pk>/', views.get_item_details, name='get_item_details'),
     path('ajax/batches/<int:item_id>/', views.get_batch_details, name='get_batch_details'),
     path('ajax/validate-quantity/<int:item_id>/', views.validate_quantity, name='validate_quantity'),

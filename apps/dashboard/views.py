@@ -98,7 +98,7 @@ def dashboard_home(request):
     low_stock_items_count = InventoryItem.objects.filter(
         company=company,
         quantity_on_hand__lte=F('reorder_level'),
-        item_type=InventoryItem.PRODUCT
+        item_type=InventoryItem.is_product
     ).count()
     
     # --- Recent activity ---

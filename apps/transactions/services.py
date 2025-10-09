@@ -145,7 +145,7 @@ def create_journal_entry_for_transaction(transaction_instance):
                     )
 
                     # --- INVENTORY MOVEMENT ---
-                    if line_item.item.item_type == InventoryItem.PRODUCT:
+                    if line_item.item.is_product:
                         InventoryTransaction.objects.create(
                             company=company, item=line_item.item,
                             transaction_type=InventoryTransaction.SALE,
@@ -215,11 +215,10 @@ def create_journal_entry_for_transaction(transaction_instance):
                     description=f"Purchase from {transaction_instance.customer.name if transaction_instance.customer else 'Vendor'}"
                 )
 
-            # --- START: REPLACED BLOCK ---
             # Debit side (what was purchased)
-            if has_line_items: # This means inventory items were used
+            if has_line_items: 
                 for line_item in transaction_instance.items.all():
-                    if line_item.item.item_type == InventoryItem.PRODUCT:
+                    if line_item.item.is_product:
                         asset_account = line_item.item.asset_account
                         if not asset_account:
                             try:

@@ -27,7 +27,7 @@ class ProductionFormulaForm(forms.ModelForm):
         if company:
             self.fields['finished_product'].queryset = InventoryItem.objects.filter(
                 company=company,
-                item_type=InventoryItem.PRODUCT
+                item_type=InventoryItem.FINISHED_GOOD
             ).order_by('name')
 
 class FormulaIngredientForm(forms.ModelForm):
