@@ -1,7 +1,6 @@
 <!-- C:\Users\Adeyanju Joshua\Desktop\lexy sofware\accounting_system_2\apps\core\templates\core\admin_settings.html -->
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
-{% load humanize %}
+{% load crispy_forms_tags humanize currency_filters %}
 {% block title %}Admin Control Panel{% endblock %}
 
 {% block content %}
@@ -369,6 +368,66 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2">
+                            <div class="col-12">
+                                <div class="section-container">
+                                    <div class="section-header">
+                                        <h6><i class="bi bi-clock-history me-2"></i>Recent Debtor Reminder Log</h6>
+                                    </div>
+                                    <div class="section-body">
+                                        {% if debtor_reminder_logs %}
+                                            <p class="text-muted mb-3">
+                                                Showing the {{ debtor_reminder_logs|length }} most recent reminders sent.
+                                            </p>
+                                            <div class="table-responsive">
+                                                <table class="table table-professional table-striped table-hover mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date Sent</th>
+                                                            <th>Customer</th>
+                                                            <th>Email Address</th>
+                                                            <th>Reminder Type</th>
+                                                            <th>Invoice Ref</th>
+                                                            <th class="text-end">Invoice Balance</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for log in debtor_reminder_logs %}
+                                                            <tr>
+                                                                <td>{{ log.sent_date|date:"M d, Y H:i" }}</td>
+                                                                <td>{{ log.customer.name }}</td>
+                                                                <td>{{ log.email_sent_to }}</td>
+                                                                <td>
+                                                                    <span class="badge {% if 'OVERDUE' in log.reminder_type %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                                                        {{ log.get_reminder_type_display }}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    {{ log.transaction.reference }}
+                                                                </td>
+                                                                <td class="text-end fw-semibold">
+                                                                    {% company_currency log.transaction.balance_due %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-light border">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                No debtor reminders have been sent recently.
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="section-footer">
+                                        <small class="text-muted">This log automatically updates after the reminder task runs.</small>
                                     </div>
                                 </div>
                             </div>

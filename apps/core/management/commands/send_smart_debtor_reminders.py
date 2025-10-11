@@ -26,6 +26,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Show what would be sent without actually sending emails',
         )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='Force the reminder check, ignoring the last check time (for manual runs)',
+        )
 
     def handle(self, *args, **options):
         company_id = options.get('company_id')
@@ -62,8 +67,9 @@ class Command(BaseCommand):
                     continue
                 
                 # Check if it's time to check for reminders
-                if not settings.is_debtor_reminder_check_due():
-                    self.stdout.write(f'Skipping {company.name}: Not time for reminder check yet')
+                force_run = options.get('force', False) 
+                if not force_run and not settings.is_debtor_reminder_check_due():
+                    self.stdout.write(f'Skipping {company.name}: Not time for reminder check yet (automated run)')
                     continue
                 
                 self.stdout.write(f'Processing reminders for {company.name}...')
@@ -185,7 +191,8 @@ class Command(BaseCommand):
                                 subject=subject,
                                 template_name=template,
                                 context=context,
-                                to_emails=[customer.email]
+                                to_emails=[customer.email],
+                                company=company 
                             )
                             
                             if success:
@@ -212,7 +219,7 @@ class Command(BaseCommand):
                                 )
                 
                 # Update last check time
-                if not dry_run:
+                if not dry_run and not force_run:
                     settings.last_debtor_reminder_check = timezone.now()
                     settings.save(update_fields=['last_debtor_reminder_check'])
                 

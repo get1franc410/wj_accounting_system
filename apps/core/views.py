@@ -21,6 +21,7 @@ from django.db import transaction
 from django.http import JsonResponse
 from apps.authentication.decorators import user_type_required
 from apps.authentication.models import User
+from apps.backup.models import DebtorReminderLog
 from .forms import CompanySettingsForm, EmailConfigForm, UserCompanyForm, AuditorCompanyForm, UserProfileForm, UserCreationForm, UserUpdateForm
 from .models import Company, EmailConfiguration
 from apps.core.email_utils import send_email
@@ -136,6 +137,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     
 @login_required
 @user_type_required(allowed_roles=[User.UserType.ADMIN])
+@never_cache
 def admin_settings(request):
     """
     Unified admin control panel with dashboard and settings
@@ -158,25 +160,19 @@ def admin_settings(request):
         )
         return redirect('accounts:chart-of-accounts')
     
-    # --- MODIFIED START ---
-    # This entire block has been updated to use the Subscription model.
-    # The context variable names ('user_license', 'license_valid', etc.) are kept
-    # the same to avoid breaking your template.
     try:
-        # We now look for 'subscription' which is the related_name from the Company model
         subscription = user_company.subscription
-        user_license = subscription  # Keep old variable name for template compatibility
-        license_valid = subscription.is_active
-        license_in_grace = False  # The grace period concept is removed in the new model
+        user_license = subscription
+        license_valid = subscription.is_valid() 
+        license_in_grace = False 
         
-        if subscription.valid_until:
-            license_days_remaining = (subscription.valid_until - timezone.now().date()).days
+        if subscription.expires_on:
+            license_days_remaining = subscription.get_days_remaining()
         else:
-            license_days_remaining = 0  # Or a large number if it's perpetual
+            license_days_remaining = 0
 
-        # We create a 'features' list from the new model's fields
         license_features = [
-            f"Plan: {subscription.plan_name}",
+            f"Plan: {subscription.get_plan_display()}",
             f"Max Users: {subscription.max_users}"
         ]
 
@@ -293,6 +289,10 @@ def admin_settings(request):
         except Exception as e:
             if settings.DEBUG:
                 print(f"Backup status error: {e}")
+
+    debtor_reminder_logs = DebtorReminderLog.objects.filter(
+        company=user_company
+    ).order_by('-sent_date')[:70]
     
     context = {
         'user_company_form': user_company_form,
@@ -315,7 +315,8 @@ def admin_settings(request):
         'license_in_grace': license_in_grace,
         'license_days_remaining': license_days_remaining,
         'license_features': license_features,
-        'page_title': 'Admin Control Panel'
+        'page_title': 'Admin Control Panel',
+        'debtor_reminder_logs': debtor_reminder_logs,
     }
     return render(request, 'core/admin_settings.html', context)
 
@@ -708,6 +709,7 @@ def send_instant_reminders(request):
         output = StringIO()
         call_command('send_smart_debtor_reminders', 
                     company_id=request.user.company.id, 
+                    force=True,
                     stdout=output)
         
         result = output.getvalue()
